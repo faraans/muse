@@ -46,6 +46,7 @@ function App() {
   const [searchKey, setSearchKey] = useState("");
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
+  const [state, setState] = useState([]);
 
   const searchArtists = async (e) => {
     e.preventDefault();
@@ -55,25 +56,10 @@ function App() {
       },
       params: {
         q: searchKey,
-        type: "artist",
+        type: "artist,album",
       },
     });
-
     setArtists(data.artists.items);
-  };
-
-  const searchAlbums = async (e) => {
-    e.preventDefault();
-    const { data } = await axios.get("https://api.spotify.com/v1/search", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        q: searchKey,
-        type: "album",
-      },
-    });
-
     setAlbums(data.albums.items);
   };
 
@@ -103,12 +89,15 @@ function App() {
     ));
   };
 
+  const [buttonText, setButtonText] = useState("muse");
+  const [boolean, setBoolean] = useState(true);
+
   return (
     <>
       <div className="header">
         <div className="bg-neutral-800 py-5 px-5">
           <div className=" text-right h-0">
-            {!token ? (
+            {/* {!token ? (
               <a
                 href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
               >
@@ -118,7 +107,7 @@ function App() {
               <a href="/profile" className="bg-transparent mx-3">
                 Profile
               </a>
-            )}
+            )} */}
 
             {!token ? (
               <a
@@ -153,7 +142,8 @@ function App() {
           onClick={() => setIsOpen((prev) => !prev)}
           className="main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
         >
-          muse
+          {buttonText}
+
           {!isOpen ? (
             <AiOutlineCaretDown className=""></AiOutlineCaretDown>
           ) : (
@@ -162,16 +152,31 @@ function App() {
         </button>
         {isOpen && (
           <div className="">
-            <button className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900">
+            <button
+              onClick={() => {
+                setButtonText("artists");
+                setBoolean(false);
+                setState("artists");
+              }}
+              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900"
+            >
               artists
             </button>
-            <button className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900">
+            <button
+              onClick={() => {
+                setButtonText("albums");
+                setState("albums");
+              }}
+              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900"
+            >
               albums
             </button>
           </div>
         )}
         <p className="my-5"></p>
-        {renderArtists()}
+        {state == "artists" && renderArtists()}
+        {state == "albums" && renderAlbums()}
+        {state == "" && renderAlbums() && renderArtists()}
       </div>
     </>
   );
