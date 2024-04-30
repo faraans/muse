@@ -18,29 +18,64 @@ function App() {
   }, []);
 
   const [isOpen, setIsOpen] = useState(false);
-
   const [token, setToken] = useState("");
+
   useEffect(() => {
     const hash = window.location.hash;
-    let token = window.localStorage.getItem("token");
+    let accessToken = window.localStorage.getItem("accessToken");
+    const refreshToken = window.localStorage.getItem("refreshToken");
 
-    if (!token && hash) {
-      token = hash
+    if (!accessToken && hash) {
+      const accessTokenParam = hash
         .substring(1)
         .split("&")
-        .find((elem) => elem.startsWith("access_token"))
-        .split("=")[1];
+        .find((elem) => elem.startsWith("access_token"));
 
-      window.location.hash = "";
-      window.localStorage.setItem("token", token);
+      if (accessTokenParam) {
+        accessToken = accessTokenParam.split("=")[1];
+
+        const refreshTokenParam = hash
+          .substring(1)
+          .split("&")
+          .find((elem) => elem.startsWith("refresh_token"));
+
+        const newRefreshToken = refreshTokenParam
+          ? refreshTokenParam.split("=")[1]
+          : null;
+
+        window.location.hash = "";
+        window.localStorage.setItem("accessToken", accessToken);
+        if (newRefreshToken) {
+          window.localStorage.setItem("refreshToken", newRefreshToken);
+        }
+      }
     }
 
-    setToken(token);
+    if (accessToken) {
+      setToken(accessToken);
+    }
   }, []);
+
+  const refreshToken = async () => {
+    const refreshToken = window.localStorage.getItem("refreshToken");
+
+    if (refreshToken) {
+      try {
+        const { data } = await axios.post("YOUR_REFRESH_TOKEN_ENDPOINT", {
+          refresh_token: refreshToken,
+        });
+        window.localStorage.setItem("accessToken", data.access_token);
+        setToken(data.access_token);
+      } catch (error) {
+        console.error("Error refreshing token:", error);
+      }
+    }
+  };
 
   const logout = () => {
     setToken("");
-    window.localStorage.removeItem("token");
+    window.localStorage.removeItem("accessToken");
+    window.localStorage.removeItem("refreshToken");
   };
 
   const [searchKey, setSearchKey] = useState("");
@@ -50,42 +85,68 @@ function App() {
 
   const searchArtists = async (e) => {
     e.preventDefault();
-    const { data } = await axios.get("https://api.spotify.com/v1/search", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        q: searchKey,
-        type: "artist,album",
-      },
-    });
-    setArtists(data.artists.items);
-    setAlbums(data.albums.items);
+    try {
+      const { data } = await axios.get("https://api.spotify.com/v1/search", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          q: searchKey,
+          type: "artist,album",
+        },
+      });
+      setArtists(data.artists.items);
+      setAlbums(data.albums.items);
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        refreshToken();
+      } else {
+        console.error("Error searching artists:", error);
+      }
+    }
   };
 
   const renderArtists = () => {
     return artists.map((artist) => (
-      <div className="artist-display" key={artist.id}>
+      <a
+        href={artist.external_urls.spotify}
+        className="artist-display"
+        key={artist.id}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {artist.images.length ? (
           <img width={"100%"} src={artist.images[0].url} alt="" />
         ) : (
-          <div>No Image</div>
+          <img
+            width={"100%"}
+            src="default_artist_image.png"
+          /> // Use default image if no image available
         )}
         {artist.name}
-      </div>
+      </a>
     ));
   };
 
   const renderAlbums = () => {
     return albums.map((album) => (
-      <div className="artist-display" key={album.id}>
+      <a
+        href={album.external_urls.spotify}
+        className="artist-display"
+        key={album.id}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {album.images.length ? (
           <img width={"100%"} src={album.images[0].url} alt="" />
         ) : (
-          <div>No Image</div>
+          <img
+            width={"100%"}
+            src="default_album_image.png"
+          /> // Use default image if no image available
         )}
         {album.name}
-      </div>
+      </a>
     ));
   };
 

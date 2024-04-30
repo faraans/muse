@@ -58,6 +58,7 @@ nav {
 .artist-display {
   display: inline-grid;
   width: 25vw;
+  padding-bottom: 20px;
   padding-inline-start: 5%;
 }
 .hero {
@@ -74,7 +75,7 @@ nav {
   position: relative;
 }
 .hero-text h1 {
-  color: #4A148C;
+  color: #4a148c;
   font-size: 5rem;
   line-height: 1.2;
 
@@ -87,7 +88,7 @@ nav {
   background-image: url(assets/syre.jpg);
   background-repeat: no-repeat;
   background-size: cover;
-  border: 5px solid #4A148C;
+  border: 5px solid #4a148c;
   border-radius: 30% 40% 30% 70%/60% 30% 70% 40%;
   height: 15rem;
   position: relative;
@@ -116,6 +117,11 @@ nav {
   gap: 10rem;
   justify-content: center;
   position: relative;
+}
+
+.artist-display:hover {
+  transform: scale(1.05); /* Increase the size slightly on hover */
+  transition: transform 0.3s ease; /* Add a smooth transition */
 }
 
 @media (max-width: 900px) {
