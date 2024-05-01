@@ -1,0 +1,27 @@
+name: CI/CD for Muse Website
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        npm install
+
+    - name: Build Website
+      run: |
+        npm run dev
+
+    - name: Deploy Website
+      run: |
+        # Replace the following command with your deployment script
+        # Example: rsync -avz --delete ./dist/ user@server:/path/to/website
