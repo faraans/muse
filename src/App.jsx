@@ -1,24 +1,24 @@
-import { useState, useEffect } from "react";
-import "./index.css";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { AiOutlineCaretUp, AiOutlineCaretDown } from "react-icons/ai";
+import { useLocation } from "react-router-dom";
+import Header from "./pages/Header";
+import Lists from "./pages/Lists";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
-const REDIRECT_URI = "http://127.0.0.1:5173/";
-const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
+const REDIRECT_URI =
+  "http://127.0.0.1:5173/" || "https://muse-react-app.netlify.app/";
 const RESPONSE_TYPE = "token";
 
 function App() {
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-      });
-  }, []);
-
-  const [isOpen, setIsOpen] = useState(false);
   const [token, setToken] = useState("");
+  const [searchKey, setSearchKey] = useState("");
+  const [artists, setArtists] = useState([]);
+  const [albums, setAlbums] = useState([]);
+  const [state, setState] = useState("");
+  const [buttonText, setButtonText] = useState("muse");
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -56,32 +56,12 @@ function App() {
     }
   }, []);
 
-  const refreshToken = async () => {
-    const refreshToken = window.localStorage.getItem("refreshToken");
-
-    if (refreshToken) {
-      try {
-        const { data } = await axios.post("YOUR_REFRESH_TOKEN_ENDPOINT", {
-          refresh_token: refreshToken,
-        });
-        window.localStorage.setItem("accessToken", data.access_token);
-        setToken(data.access_token);
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-      }
-    }
-  };
-
   const logout = () => {
     setToken("");
     window.localStorage.removeItem("accessToken");
     window.localStorage.removeItem("refreshToken");
+    window.location.href = "/";
   };
-
-  const [searchKey, setSearchKey] = useState("");
-  const [artists, setArtists] = useState([]);
-  const [albums, setAlbums] = useState([]);
-  const [state, setState] = useState([]);
 
   const searchArtists = async (e) => {
     e.preventDefault();
@@ -99,7 +79,7 @@ function App() {
       setAlbums(data.albums.items);
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        refreshToken();
+        // Handle unauthorized access here
       } else {
         console.error("Error searching artists:", error);
       }
@@ -118,10 +98,7 @@ function App() {
         {artist.images.length ? (
           <img width={"100%"} src={artist.images[0].url} alt="" />
         ) : (
-          <img
-            width={"100%"}
-            src="default_artist_image.png"
-          /> // Use default image if no image available
+          <img width={"100%"} src="default_artist_image.png" alt="" />
         )}
         {artist.name}
       </a>
@@ -140,53 +117,25 @@ function App() {
         {album.images.length ? (
           <img width={"100%"} src={album.images[0].url} alt="" />
         ) : (
-          <img
-            width={"100%"}
-            src="default_album_image.png"
-          /> // Use default image if no image available
+          <img width={"100%"} src="default_album_image.png" alt="" />
         )}
         {album.name}
       </a>
     ));
   };
 
-  const [buttonText, setButtonText] = useState("muse");
-  const [boolean, setBoolean] = useState(true);
-
   return (
     <>
-      <div className="header">
-        <div className="bg-neutral-800 py-5 px-5">
-          <div className=" text-right h-0">
-            {/* {!token ? (
-              <a
-                href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
-              >
-                Profile{" "}
-              </a>
-            ) : (
-              <a href="/profile" className="bg-transparent mx-3">
-                Profile
-              </a>
-            )} */}
-
-            {!token ? (
-              <a
-                href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
-              >
-                Login to Spotify
-              </a>
-            ) : (
-              <button className="bg-transparent" onClick={logout}>
-                Logout
-              </button>
-            )}
-          </div>
+      {location.pathname !== "/login" && (
+        <Header accessToken={token} onLogout={logout} />
+      )}
+      <div className="main-page-container my-5">
+        {location.pathname !== "/login" && (
           <div className="search-wrapper h-10">
             {token ? (
               <form onSubmit={searchArtists}>
                 <input
-                  className=" bg-neutral-900 input"
+                  className="bg-neutral-900 input"
                   placeholder="Search music..."
                   onChange={(e) => setSearchKey(e.target.value)}
                 />
@@ -195,20 +144,16 @@ function App() {
               <h2>Please login</h2>
             )}
           </div>
-        </div>{" "}
-      </div>
-
-      <div className="main-page-container my-5">
+        )}
         <button
           onClick={() => setIsOpen((prev) => !prev)}
           className="main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
         >
           {buttonText}
-
           {!isOpen ? (
-            <AiOutlineCaretDown className=""></AiOutlineCaretDown>
+            <AiOutlineCaretDown className="" />
           ) : (
-            <AiOutlineCaretUp className=""></AiOutlineCaretUp>
+            <AiOutlineCaretUp className="" />
           )}
         </button>
         {isOpen && (
@@ -216,7 +161,6 @@ function App() {
             <button
               onClick={() => {
                 setButtonText("artists");
-                setBoolean(false);
                 setState("artists");
               }}
               className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900"
@@ -235,9 +179,17 @@ function App() {
           </div>
         )}
         <p className="my-5"></p>
-        {state == "artists" && renderArtists()}
-        {state == "albums" && renderAlbums()}
-        {state == "" && renderAlbums() && renderArtists()}
+        {state === "artists" || state === "albums" ? (
+          <>
+            {state === "artists" && renderArtists()}
+            {state === "albums" && renderAlbums()}
+          </>
+        ) : (
+          <>
+            {renderArtists()}
+            {renderAlbums()}
+          </>
+        )}
       </div>
     </>
   );

@@ -1,19 +1,64 @@
-import React from 'react'
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Lists from "./Lists";
+import Header from "./Header";
 
-export const Profile = () => {
+const Profile = ({ accessToken }) => {
+  const [displayName, setDisplayName] = useState("");
+  const [userId, setUserId] = useState("");
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axios.get("https://api.spotify.com/v1/me", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        console.log(response.data);
+        setDisplayName(response.data.display_name || "No Display Name");
+        setUserId(response.data.id);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    if (accessToken) {
+      fetchUserProfile();
+    }
+  }, [accessToken]);
+
+  const logout = () => {
+    // Clear the access token from local storage
+    window.localStorage.removeItem("accessToken");
+    window.location.href = "/";
+  };
+
   return (
-    <section className='hero'>
-        <div className='container'>
-            <div className='content'>
-                <div className='hero-main'>
-                    <div className='hero-text'>
-                        <h1>Profile Name</h1>
-                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolor tenetur assumenda quasi repellat voluptatem vel accusamus ex reiciendis ipsum eaque incidunt cum, itaque mollitia architecto consequuntur excepturi voluptatum iusto aperiam? </p>
-                    </div>
-                    <div className='hero-img'></div>
-                </div>
+    <>
+      <Header accessToken={accessToken} onLogout={logout} />
+      {/* Pass accessToken to Header */}
+      <section className="hero">
+        <div className="container">
+          <div className="content">
+            <div className="hero-main">
+              <div className="hero-text">
+                <h1>{displayName}'s Profile</h1>
+                <p>
+                  User ID: {userId}
+                  <br />
+                  {/* Your other profile content here */}
+                </p>
+                {
+                  
+                }
+              </div>
             </div>
+          </div>
         </div>
-    </section>
-  )
-}
+      </section>
+    </>
+  );
+};
+
+export default Profile;

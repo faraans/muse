@@ -124,6 +124,84 @@ nav {
   transition: transform 0.3s ease; /* Add a smooth transition */
 }
 
+.bio-container {
+  margin-top: 20px;
+}
+
+.bio-container p {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.bio-container input {
+  width: 100%;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.bio-container button {
+  padding: 5px 10px;
+  margin-right: 5px;
+}
+
+/* Additional styles for the editable bio */
+.editable-bio {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.editable-bio textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.lists-container {
+  margin-top: 20px;
+}
+
+.lists-container h2 {
+  color: #4a148c;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.lists-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.lists-container ul li {
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.lists-container input[type="text"] {
+  width: 200px;
+  padding: 5px;
+  margin-right: 10px;
+}
+
+.lists-container button {
+  padding: 5px 10px;
+  background-color: #4a148c;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.lists-container button:hover {
+  background-color: #7500ff;
+}
+
+@media (max-width: 600px) {
+  .lists-container input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
 @media (max-width: 900px) {
   .content {
     flex-direction: column;
