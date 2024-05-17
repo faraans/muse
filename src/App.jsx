@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { AiOutlineCaretUp, AiOutlineCaretDown } from "react-icons/ai";
+import {
+  AiOutlineCaretUp,
+  AiOutlineCaretDown,
+  AiOutlineHeart,
+  AiFillHeart,
+  AiOutlineLink,
+} from "react-icons/ai";
 import { useLocation } from "react-router-dom";
 import Header from "./pages/Header";
+import Lists from "./pages/Lists";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
 const REDIRECT_URI =
   "http://127.0.0.1:5173/" || "https://muse-react-app.netlify.app/";
 const RESPONSE_TYPE = "token";
+const BASE_URL = "http://localhost:8000";
 
 function App() {
   const [token, setToken] = useState("");
@@ -17,12 +25,12 @@ function App() {
   const [state, setState] = useState("");
   const [buttonText, setButtonText] = useState("muse");
   const [isOpen, setIsOpen] = useState(false);
+  const [likedItems, setLikedItems] = useState([]);
   const location = useLocation();
 
   useEffect(() => {
     const hash = window.location.hash;
     let accessToken = window.localStorage.getItem("accessToken");
-    const refreshToken = window.localStorage.getItem("refreshToken");
 
     if (!accessToken && hash) {
       const accessTokenParam = hash
@@ -32,28 +40,32 @@ function App() {
 
       if (accessTokenParam) {
         accessToken = accessTokenParam.split("=")[1];
-
-        const refreshTokenParam = hash
-          .substring(1)
-          .split("&")
-          .find((elem) => elem.startsWith("refresh_token"));
-
-        const newRefreshToken = refreshTokenParam
-          ? refreshTokenParam.split("=")[1]
-          : null;
-
         window.location.hash = "";
         window.localStorage.setItem("accessToken", accessToken);
-        if (newRefreshToken) {
-          window.localStorage.setItem("refreshToken", newRefreshToken);
-        }
       }
     }
 
     if (accessToken) {
       setToken(accessToken);
     }
+
+    fetchLikedItems();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("likedItems", JSON.stringify(likedItems));
+  }, [likedItems]);
+
+  const fetchLikedItems = async () => {
+    try {
+      const storedLikedItems = localStorage.getItem("likedItems");
+      if (storedLikedItems) {
+        setLikedItems(JSON.parse(storedLikedItems));
+      }
+    } catch (error) {
+      console.error("Error fetching liked items from local storage:", error);
+    }
+  };
 
   const logout = () => {
     setToken("");
@@ -85,42 +97,107 @@ function App() {
     }
   };
 
+  const handleLike = (item, type) => {
+    const updatedLikedItems = [...likedItems];
+
+    const likedItemIndex = likedItems.findIndex(
+      (likedItem) => likedItem.type === type && likedItem.item.id === item.id
+    );
+
+    if (likedItemIndex !== -1) {
+      updatedLikedItems.splice(likedItemIndex, 1);
+    } else {
+      updatedLikedItems.push({ type, item });
+    }
+
+    setLikedItems(updatedLikedItems);
+
+    const apiUrl = BASE_URL + (likedItemIndex !== -1 ? "/unlike" : "/like");
+    axios
+      .post(apiUrl, {
+        item: item.id,
+        type,
+        name: item.name,
+      })
+      .catch((error) => {
+        console.error("Error updating liked items:", error);
+      });
+  };
+
+  const isLiked = (item, type) => {
+    return likedItems.some(
+      (likedItem) => likedItem.type === type && likedItem.item.id === item.id
+    );
+  };
+
   const renderArtists = () => {
-    return artists.map((artist) => (
-      <a
-        href={artist.external_urls.spotify}
-        className="artist-display"
-        key={artist.id}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {artist.images.length ? (
-          <img width={"100%"} src={artist.images[0].url} alt="" />
-        ) : (
-          <img width={"100%"} src="default_artist_image.png" alt="" />
-        )}
-        {artist.name}
-      </a>
-    ));
+    return artists.map((artist) => {
+      return (
+        <div key={artist.id} className="artist-display">
+          <a
+            href={artist.external_urls.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {artist.images.length ? (
+              <img width={"100%"} src={artist.images[0].url} alt="" />
+            ) : (
+              <img width={"100%"} src="default_artist_image.png" alt="" />
+            )}
+            {artist.name}
+          </a>
+          <div className="overlay">
+            <button onClick={() => handleLike(artist, "artist")}>
+              {isLiked(artist, "artist") ? <AiFillHeart /> : <AiOutlineHeart />}
+            </button>
+            <a
+              href={artist.external_urls.spotify}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <AiOutlineLink />
+            </a>
+          </div>
+        </div>
+      );
+    });
   };
 
   const renderAlbums = () => {
-    return albums.map((album) => (
-      <a
-        href={album.external_urls.spotify}
-        className="artist-display"
-        key={album.id}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {album.images.length ? (
-          <img width={"100%"} src={album.images[0].url} alt="" />
-        ) : (
-          <img width={"100%"} src="default_album_image.png" alt="" />
-        )}
-        {album.name}
-      </a>
-    ));
+    return albums.map((album) => {
+      const isLiked = likedItems.some(
+        (likedItem) =>
+          likedItem.type === "album" && likedItem.item.id === album.id
+      );
+      return (
+        <div key={album.id} className="artist-display">
+          <a
+            href={album.external_urls.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {album.images.length ? (
+              <img width={"100%"} src={album.images[0].url} alt="" />
+            ) : (
+              <img width={"100%"} src="default_album_image.png" alt="" />
+            )}
+            {album.name}
+          </a>
+          <div className="overlay">
+            <button onClick={() => handleLike(album, "album")}>
+              {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
+            </button>
+            <a
+              href={album.external_urls.spotify}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <AiOutlineLink />
+            </a>
+          </div>
+        </div>
+      );
+    });
   };
 
   return (

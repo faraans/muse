@@ -3,6 +3,7 @@ const app = express();
 const mysql = require("mysql");
 const port = 8000;
 const cors = require("cors");
+const { data } = require("autoprefixer");
 
 app.use(cors());
 app.use(express.json());
@@ -18,26 +19,31 @@ db.connect((err) => {
   console.log("MySQL Connected");
 });
 
-app.post("/login", (req, res) => {
-  const email = req.body.params.email;
-  const password = req.body.params.password;
-  db.query(
-    `SELECT * FROM user WHERE UserEmail = "${email}" AND UserPassword = "${password}"`,
-    [email, password],
-    (err, data) => {
-      console.log(req);
-      if (err) return res.json(console.log(err));
-      if (data.length > 0) {
-        return res.json("Login Succesfully");
-      } else {
-        return res.json("No record");
-      }
-    }
-  );
+app.post("/like", async (req, res) => {
+  let sql =
+    "INSERT INTO `liked_items` (`item_id`, `item_type`, `name`) VALUES (?, ?, ?)";
+  try {
+    db.query(sql, [req.body.item, req.body.type, req.body.name]);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
-app.get("/", (req, res) => {
-  res.send({ data: "Hello World" });
+app.post("/unlike", async (req, res) => {
+  let sql = "DELETE FROM liked_items WHERE item_id = ?";
+  try {
+    db.query(sql, [req.body.item]);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+app.get("/", async (req, res) => {
+  try {
+    res.send({ data: "Hello World" });
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
 app.listen(port, () => console.log(`App is running on Port ${port}`));

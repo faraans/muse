@@ -1,6 +1,6 @@
 # React + Vite
 
-In the project directory, you can run:
+In the project directory and backend directory, you can run:
 
 ## ```npm run dev```
 Runs the app in the development mode.
