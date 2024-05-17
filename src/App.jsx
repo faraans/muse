@@ -3,7 +3,6 @@ import axios from "axios";
 import { AiOutlineCaretUp, AiOutlineCaretDown } from "react-icons/ai";
 import { useLocation } from "react-router-dom";
 import Header from "./pages/Header";
-import Lists from "./pages/Lists";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
 const REDIRECT_URI =
