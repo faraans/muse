@@ -26,6 +26,7 @@ function App() {
   const [buttonText, setButtonText] = useState("muse");
   const [isOpen, setIsOpen] = useState(false);
   const [likedItems, setLikedItems] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -47,6 +48,12 @@ function App() {
 
     if (accessToken) {
       setToken(accessToken);
+
+      fetchUserProfile(accessToken).then((profile) => {
+        if (profile) {
+          setUserProfile(profile);
+        }
+      });
     }
 
     fetchLikedItems();
@@ -55,6 +62,20 @@ function App() {
   useEffect(() => {
     localStorage.setItem("likedItems", JSON.stringify(likedItems));
   }, [likedItems]);
+
+  const fetchUserProfile = async (accessToken) => {
+    try {
+      const response = await axios.get("https://api.spotify.com/v1/me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
 
   const fetchLikedItems = async () => {
     try {
@@ -118,6 +139,7 @@ function App() {
         item: item.id,
         type,
         name: item.name,
+        userId: userProfile.id, // Include userId in the request body
       })
       .catch((error) => {
         console.error("Error updating liked items:", error);

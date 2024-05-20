@@ -21,18 +21,25 @@ db.connect((err) => {
 
 app.post("/like", async (req, res) => {
   let sql =
-    "INSERT INTO `liked_items` (`item_id`, `item_type`, `name`) VALUES (?, ?, ?)";
+    "INSERT INTO `liked_items` (`item_id`, `item_type`, `name`, `user_id`) VALUES (?, ?, ?, ?)";
   try {
-    db.query(sql, [req.body.item, req.body.type, req.body.name]);
+    db.query(sql, [
+      req.body.item,
+      req.body.type,
+      req.body.name,
+      req.body.userId,
+    ]);
+    res.status(200).send("Item liked successfully");
   } catch (err) {
     res.status(500).send(err);
   }
 });
 
 app.post("/unlike", async (req, res) => {
-  let sql = "DELETE FROM liked_items WHERE item_id = ?";
+  let sql = "DELETE FROM liked_items WHERE item_id = ? AND user_id = ?";
   try {
-    db.query(sql, [req.body.item]);
+    db.query(sql, [req.body.item, req.body.userId]);
+    res.status(200).send("Item unliked successfully");
   } catch (err) {
     res.status(500).send(err);
   }
