@@ -9,7 +9,7 @@ import {
 } from "react-icons/ai";
 import { useLocation } from "react-router-dom";
 import Header from "./pages/Header";
-import Lists from "./pages/Lists";
+import Search from "./assets/Search";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
 const REDIRECT_URI =
@@ -18,6 +18,7 @@ const RESPONSE_TYPE = "token";
 const BASE_URL = "http://localhost:8000";
 
 function App() {
+  console.log("hello");
   const [token, setToken] = useState("");
   const [searchKey, setSearchKey] = useState("");
   const [artists, setArtists] = useState([]);
@@ -93,29 +94,6 @@ function App() {
     window.localStorage.removeItem("accessToken");
     window.localStorage.removeItem("refreshToken");
     window.location.href = "/";
-  };
-
-  const searchArtists = async (e) => {
-    e.preventDefault();
-    try {
-      const { data } = await axios.get("https://api.spotify.com/v1/search", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          q: searchKey,
-          type: "artist,album",
-        },
-      });
-      setArtists(data.artists.items);
-      setAlbums(data.albums.items);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        // Handle unauthorized access here
-      } else {
-        console.error("Error searching artists:", error);
-      }
-    }
   };
 
   const handleLike = (item, type) => {
@@ -225,19 +203,19 @@ function App() {
   return (
     <>
       {location.pathname !== "/login" && (
-        <Header accessToken={token} onLogout={logout} />
+        <Header accessToken={token} onLogout={logout} token={token} />
       )}
       <div className="main-page-container my-5">
         {location.pathname !== "/login" && (
           <div className="search-wrapper h-10">
             {token ? (
-              <form onSubmit={searchArtists}>
-                <input
-                  className="bg-neutral-900 input"
-                  placeholder="Search music..."
-                  onChange={(e) => setSearchKey(e.target.value)}
-                />
-              </form>
+              <Search
+                setArtists={setArtists}
+                setAlbums={setAlbums}
+                setSearchKey={setSearchKey}
+                token={token}
+                searchKey={setSearchKey}
+              />
             ) : (
               <h2>Please login</h2>
             )}
