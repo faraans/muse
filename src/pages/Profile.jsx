@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Lists from "./Lists";
 import Header from "./Header";
+import { Favorites } from "./Favorites/Favorites";
 
 const Profile = ({ accessToken }) => {
+  console.log(accessToken);
   const [displayName, setDisplayName] = useState("");
   const [userId, setUserId] = useState("");
 
@@ -49,13 +50,16 @@ const Profile = ({ accessToken }) => {
                   <br />
                   {/* Your other profile content here */}
                 </p>
-                {
-                  
-                }
+                {}
               </div>
             </div>
           </div>
         </div>
+      </section>
+      <section>
+        <h2>
+          <Favorites accessToken={accessToken} />
+        </h2>
       </section>
     </>
   );

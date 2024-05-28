@@ -45,6 +45,51 @@ app.post("/unlike", async (req, res) => {
   }
 });
 
+app.post("/favorite", async (req, res) => {
+  const { user_id, album_id, album_name, album_image, album_url } = req.body;
+  const sql = "INSERT INTO `favorites` (`user_id`, `album_id`, `album_name`, `album_image`, `album_url`) VALUES (?, ?, ?, ?, ?)";
+  try {
+    db.query(sql, [user_id, album_id, album_name, album_image, album_url], (err, result) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+      res.status(200).send("Album added to favorites successfully");
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+app.post("/unfavorite", async (req, res) => {
+  const { user_id, album_id } = req.body;
+  const sql = "DELETE FROM `favorites` WHERE `user_id` = ? AND `album_id` = ?";
+  try {
+    db.query(sql, [user_id, album_id], (err, result) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+      res.status(200).send("Album removed from favorites successfully");
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+app.get("/favorites/:user_id", async (req, res) => {
+  const sql = "SELECT * FROM `favorites` WHERE `user_id` = ?";
+  try {
+    db.query(sql, [req.params.user_id], (err, results) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+      res.status(200).json(results);
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+
 app.get("/", async (req, res) => {
   try {
     res.send({ data: "Hello World" });
