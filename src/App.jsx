@@ -18,7 +18,6 @@ const RESPONSE_TYPE = "token";
 const BASE_URL = "http://localhost:8000";
 
 function App() {
-  console.log("hello");
   const [token, setToken] = useState("");
   const [searchKey, setSearchKey] = useState("");
   const [artists, setArtists] = useState([]);
@@ -203,7 +202,12 @@ function App() {
   return (
     <>
       {location.pathname !== "/login" && (
-        <Header accessToken={token} onLogout={logout} token={token} />
+        <Header
+          userProfile={userProfile}
+          accessToken={token}
+          onLogout={logout}
+          token={token}
+        />
       )}
       <div className="main-page-container my-5">
         {location.pathname !== "/login" && (

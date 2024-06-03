@@ -1,7 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
-
-// Import necessary constants
+import { Link, useNavigate } from "react-router-dom";
 import {
   CLIENT_ID,
   REDIRECT_URI,
@@ -9,7 +7,13 @@ import {
   RESPONSE_TYPE,
 } from "../constants";
 
-const Header = ({ accessToken, onLogout }) => {
+const Header = ({ accessToken, onLogout, userProfile }) => {
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    navigate("/profile", { state: { userProfile } });
+  };
+
   return (
     <div className="header">
       <div className="bg-neutral-800 py-5 px-5 flex justify-between items-center">
@@ -23,12 +27,12 @@ const Header = ({ accessToken, onLogout }) => {
               Home
             </Link>
             {accessToken && (
-              <Link
-                to="/profile"
-                className="text-white hover:text-gray-300 transition duration-300"
+              <span
+                onClick={handleProfileClick}
+                className="cursor-pointer text-white hover:text-gray-300 transition duration-300"
               >
                 Profile
-              </Link>
+              </span>
             )}
           </nav>
         </div>
