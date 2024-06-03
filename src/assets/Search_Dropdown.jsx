@@ -2,15 +2,13 @@ import React, { useState, useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import axios from "axios";
-import {
-  CLIENT_ID,
-  REDIRECT_URI,
-  AUTH_ENDPOINT,
-  RESPONSE_TYPE,
-} from "../constants";
 
-const Search_Dropdown = ({ accessToken, setImage }) => {
-  const [token, setToken] = useState(accessToken);
+const Search_Dropdown = ({
+  accessToken,
+  setImage,
+  handleFavorite,
+  albumData,
+}) => {
   const [searchKey, setSearchKey] = useState("");
   const [albums, setAlbums] = useState([]);
   const [value, setValue] = useState(null);
@@ -23,7 +21,7 @@ const Search_Dropdown = ({ accessToken, setImage }) => {
             "https://api.spotify.com/v1/search",
             {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
               params: {
                 q: searchKey,
@@ -31,7 +29,6 @@ const Search_Dropdown = ({ accessToken, setImage }) => {
               },
             }
           );
-          console.log(data.albums);
           setAlbums(data.albums.items);
         } catch (error) {
           console.error("Error fetching albums:", error);
@@ -42,7 +39,7 @@ const Search_Dropdown = ({ accessToken, setImage }) => {
     };
 
     fetchAlbums();
-  }, [searchKey, token]);
+  }, [searchKey, accessToken]);
 
   return (
     <div className="main">
@@ -52,7 +49,14 @@ const Search_Dropdown = ({ accessToken, setImage }) => {
           getOptionLabel={(option) => option.name}
           value={value}
           onChange={(event, newValue) => {
-            setImage(newValue.images[0].url);
+            const albumDetails = {
+              id: newValue.id,
+              name: newValue.name,
+              image: newValue.images[0]?.url,
+              url: newValue.external_urls.spotify,
+            };
+            setImage(albumDetails.image);
+            handleFavorite(albumDetails);
             setValue(newValue);
           }}
           inputValue={searchKey}

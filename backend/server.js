@@ -45,50 +45,41 @@ app.post("/unlike", async (req, res) => {
   }
 });
 
-app.post("/favorite", async (req, res) => {
+
+app.post("/favorite", (req, res) => {
   const { user_id, album_id, album_name, album_image, album_url } = req.body;
   const sql = "INSERT INTO `favorites` (`user_id`, `album_id`, `album_name`, `album_image`, `album_url`) VALUES (?, ?, ?, ?, ?)";
-  try {
-    db.query(sql, [user_id, album_id, album_name, album_image, album_url], (err, result) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-      res.status(200).send("Album added to favorites successfully");
-    });
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  db.query(sql, [user_id, album_id, album_name, album_image, album_url], (err, result) => {
+    if (err) {
+      console.error("Error adding to favorites:", err);
+      return res.status(500).send(err);
+    }
+    res.status(200).send("Album added to favorites successfully");
+  });
 });
 
-app.post("/unfavorite", async (req, res) => {
+app.post("/unfavorite", (req, res) => {
   const { user_id, album_id } = req.body;
   const sql = "DELETE FROM `favorites` WHERE `user_id` = ? AND `album_id` = ?";
-  try {
-    db.query(sql, [user_id, album_id], (err, result) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-      res.status(200).send("Album removed from favorites successfully");
-    });
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  db.query(sql, [user_id, album_id], (err, result) => {
+    if (err) {
+      console.error("Error removing from favorites:", err);
+      return res.status(500).send(err);
+    }
+    res.status(200).send("Album removed from favorites successfully");
+  });
 });
 
-app.get("/favorites/:user_id", async (req, res) => {
+app.get("/favorites/:user_id", (req, res) => {
   const sql = "SELECT * FROM `favorites` WHERE `user_id` = ?";
-  try {
-    db.query(sql, [req.params.user_id], (err, results) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-      res.status(200).json(results);
-    });
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  db.query(sql, [req.params.user_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching favorites:", err);
+      return res.status(500).send(err);
+    }
+    res.status(200).json(results);
+  });
 });
-
 
 app.get("/", async (req, res) => {
   try {

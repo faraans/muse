@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
 import { Favorites } from "./Favorites/Favorites";
 
 const Profile = ({ accessToken }) => {
-  console.log(accessToken);
-  const [displayName, setDisplayName] = useState("");
-  const [userId, setUserId] = useState("");
+  const location = useLocation();
+  const userProfile = location.state?.userProfile || {};
+  const [displayName, setDisplayName] = useState(
+    userProfile.display_name || "No Display Name"
+  );
+  const [userId, setUserId] = useState(userProfile.id || "");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -16,29 +20,31 @@ const Profile = ({ accessToken }) => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        console.log(response.data);
-        setDisplayName(response.data.display_name || "No Display Name");
-        setUserId(response.data.id);
+        const profile = response.data;
+        setDisplayName(profile.display_name || "No Display Name");
+        setUserId(profile.id);
       } catch (error) {
         console.error("Error fetching user profile:", error);
       }
     };
 
-    if (accessToken) {
+    if (accessToken && !userProfile.id) {
       fetchUserProfile();
     }
-  }, [accessToken]);
+  }, [accessToken, userProfile.id]);
 
   const logout = () => {
-    // Clear the access token from local storage
     window.localStorage.removeItem("accessToken");
     window.location.href = "/";
   };
 
   return (
     <>
-      <Header accessToken={accessToken} onLogout={logout} />
-      {/* Pass accessToken to Header */}
+      <Header
+        userProfile={userProfile}
+        accessToken={accessToken}
+        onLogout={logout}
+      />
       <section className="hero">
         <div className="container">
           <div className="content">
@@ -48,9 +54,7 @@ const Profile = ({ accessToken }) => {
                 <p>
                   User ID: {userId}
                   <br />
-                  {/* Your other profile content here */}
                 </p>
-                {}
               </div>
             </div>
           </div>
@@ -58,7 +62,7 @@ const Profile = ({ accessToken }) => {
       </section>
       <section>
         <h2>
-          <Favorites accessToken={accessToken} />
+          <Favorites accessToken={accessToken} userProfile={userProfile} />
         </h2>
       </section>
     </>
