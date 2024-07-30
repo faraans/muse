@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  AiOutlineCaretUp,
-  AiOutlineCaretDown,
-  AiOutlineHeart,
-  AiFillHeart,
-  AiOutlineLink,
-} from "react-icons/ai";
+import { AiOutlineCaretUp, AiOutlineCaretDown } from "react-icons/ai";
 import { useLocation } from "react-router-dom";
 import Header from "./pages/Header";
 import Search from "./assets/Search";
+import ArtistCard from "./assets/ArtistCard";
+import AlbumCard from "./assets/AlbumCard";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
-const REDIRECT_URI =
-  "http://127.0.0.1:5173/" || "https://muse-react-app.netlify.app/";
+const REDIRECT_URI = "http://127.0.0.1:5173/" || "https://muse-react-app.netlify.app/";
 const RESPONSE_TYPE = "token";
 const BASE_URL = "http://localhost:8000";
 
@@ -116,7 +111,7 @@ function App() {
         item: item.id,
         type,
         name: item.name,
-        userId: userProfile.id, // Include userId in the request body
+        userId: userProfile.id,
       })
       .catch((error) => {
         console.error("Error updating liked items:", error);
@@ -130,84 +125,31 @@ function App() {
   };
 
   const renderArtists = () => {
-    return artists.map((artist) => {
-      return (
-        <div key={artist.id} className="artist-display">
-          <a
-            href={artist.external_urls.spotify}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {artist.images.length ? (
-              <img width={"100%"} src={artist.images[0].url} alt="" />
-            ) : (
-              <img width={"100%"} src="default_artist_image.png" alt="" />
-            )}
-            {artist.name}
-          </a>
-          <div className="overlay">
-            <button onClick={() => handleLike(artist, "artist")}>
-              {isLiked(artist, "artist") ? <AiFillHeart /> : <AiOutlineHeart />}
-            </button>
-            <a
-              href={artist.external_urls.spotify}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <AiOutlineLink />
-            </a>
-          </div>
-        </div>
-      );
-    });
+    return artists.map((artist) => (
+      <ArtistCard
+        key={artist.id}
+        artist={artist}
+        onLike={handleLike}
+        isLiked={isLiked(artist, "artist")}
+      />
+    ));
   };
 
   const renderAlbums = () => {
-    return albums.map((album) => {
-      const isLiked = likedItems.some(
-        (likedItem) =>
-          likedItem.type === "album" && likedItem.item.id === album.id
-      );
-      return (
-        <div key={album.id} className="artist-display">
-          <a
-            href={album.external_urls.spotify}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {album.images.length ? (
-              <img width={"100%"} src={album.images[0].url} alt="" />
-            ) : (
-              <img width={"100%"} src="default_album_image.png" alt="" />
-            )}
-            {album.name}
-          </a>
-          <div className="overlay">
-            <button onClick={() => handleLike(album, "album")}>
-              {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
-            </button>
-            <a
-              href={album.external_urls.spotify}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <AiOutlineLink />
-            </a>
-          </div>
-        </div>
-      );
-    });
+    return albums.map((album) => (
+      <AlbumCard
+        key={album.id}
+        album={album}
+        onLike={handleLike}
+        isLiked={isLiked(album, "album")}
+      />
+    ));
   };
 
   return (
     <>
       {location.pathname !== "/login" && (
-        <Header
-          userProfile={userProfile}
-          accessToken={token}
-          onLogout={logout}
-          token={token}
-        />
+        <Header userProfile={userProfile} accessToken={token} onLogout={logout} token={token} />
       )}
       <div className="main-page-container my-5">
         {location.pathname !== "/login" && (
@@ -218,7 +160,7 @@ function App() {
                 setAlbums={setAlbums}
                 setSearchKey={setSearchKey}
                 token={token}
-                searchKey={setSearchKey}
+                searchKey={searchKey}
               />
             ) : (
               <h2>Please login</h2>
@@ -243,7 +185,7 @@ function App() {
                 setButtonText("artists");
                 setState("artists");
               }}
-              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900"
+              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
             >
               artists
             </button>
@@ -252,7 +194,7 @@ function App() {
                 setButtonText("albums");
                 setState("albums");
               }}
-              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700  bg-neutral-800 border-neutral-900"
+              className="hover:bg-neutral-700 transition main-title border-4 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
             >
               albums
             </button>
@@ -261,18 +203,20 @@ function App() {
         <p className="my-5"></p>
         {state === "artists" || state === "albums" ? (
           <>
-            {state === "artists" && renderArtists()}
-            {state === "albums" && renderAlbums()}
-          </>
-        ) : (
-          <>
-            {renderArtists()}
-            {renderAlbums()}
-          </>
-        )}
-      </div>
-    </>
-  );
+            {state === "artists"
+&& renderArtists()}
+{state === "albums" && renderAlbums()}
+</>
+) : (
+<>
+{renderArtists()}
+{renderAlbums()}
+</>
+)}
+</div>
+</>
+);
 }
 
 export default App;
+
