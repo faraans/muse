@@ -8,18 +8,23 @@ const Profile = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Fetch the userProfile and accessToken from location.state or localStorage
-  const locationUserProfile = location.state?.userProfile || {};
-  const locationToken = location.state?.accessToken || localStorage.getItem("accessToken");
+  // Retrieve access token from location or localStorage
+  const initialToken =
+    location.state?.accessToken || localStorage.getItem("accessToken");
 
-  const [displayName, setDisplayName] = useState(
-    locationUserProfile.display_name || "No Display Name"
-  );
-  const [userId, setUserId] = useState(locationUserProfile.id || "");
-  const [accessToken, setAccessToken] = useState(locationToken);
+  const [accessToken, setAccessToken] = useState(initialToken || "");
+  const [displayName, setDisplayName] = useState("");
+  const [userId, setUserId] = useState("");
 
+  // Persist access token to localStorage
   useEffect(() => {
-    // If we have accessToken, fetch user profile if userId is missing
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+    }
+  }, [accessToken]);
+
+  // Fetch user profile using token
+  useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         const response = await axios.get("https://api.spotify.com/v1/me", {
@@ -32,12 +37,10 @@ const Profile = () => {
         setUserId(profile.id);
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        // If there's an error fetching the profile, redirect to home page
         navigate("/");
       }
     };
 
-    // Fetch user profile only if no userId is found
     if (accessToken && !userId) {
       fetchUserProfile();
     }
@@ -50,8 +53,14 @@ const Profile = () => {
 
   if (!accessToken) {
     return (
-      <div>
-        <p>You must log in to view the profile.</p>
+      <div className="text-center mt-10 text-red-500">
+        <p>
+          Access token missing. Please{" "}
+          <a className="text-blue-600 underline" href="/">
+            log in
+          </a>{" "}
+          again.
+        </p>
       </div>
     );
   }
@@ -63,7 +72,7 @@ const Profile = () => {
         accessToken={accessToken}
         onLogout={logout}
       />
-      <section className="hero">
+      <section className="py-5 hero">
         <div className="container">
           <div className="content">
             <div className="hero-main">

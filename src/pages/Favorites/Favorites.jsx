@@ -25,7 +25,6 @@ export const Favorites = ({ userProfile, accessToken }) => {
 
   return (
     <div className="favorite-container">
-      <h1>Favorite Albums</h1>
       <div className="card-container">
         {Array.from({ length: 4 }).map((_, index) => {
           const album = favorites[index] || {};

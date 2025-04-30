@@ -1,5 +1,6 @@
 .favorite-container {
   padding-top: 1rem;
+  padding-right: 65rem;
   height: 10rem;
   width: 50%;
   margin: 0 auto;
@@ -16,12 +17,12 @@
 }
 
 .card {
-  width: 8rem;
+  width: 16rem;
   background-color: #2c2c2c;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 16rem;
   border: 3px solid #4a148c;
   border-radius: 1px;
 }
