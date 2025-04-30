@@ -21,7 +21,7 @@ function App() {
   const [state, setState] = useState("");
   const [buttonText, setButtonText] = useState("muse");
   const [isOpen, setIsOpen] = useState(false);
-  const [likedItems, setLikedItems] = useState([]);
+  const [likedItems, setLikedItems] = useState([]); // Keeps track of liked items
   const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate(); // Use navigate hook
   const location = useLocation(); // Use location hook
@@ -48,15 +48,16 @@ function App() {
     if (storedAccessToken) {
       setToken(storedAccessToken);
       fetchUserProfile(storedAccessToken).then((profile) => {
-        if (profile) setUserProfile(profile);
+        if (profile) {
+          setUserProfile(profile);
+          fetchLikedItems(profile.id); // Fetch liked items after setting profile
+        }
       });
     }
 
     if (storedRefreshToken) {
       setRefreshToken(storedRefreshToken);
     }
-
-    fetchLikedItems();
   }, []);
 
   const refreshAccessToken = async () => {
@@ -100,14 +101,18 @@ function App() {
     }
   };
 
-  const fetchLikedItems = () => {
+  const fetchLikedItems = async (userId) => {
+    if (!userId) return;
     try {
-      const storedLikedItems = localStorage.getItem("likedItems");
-      if (storedLikedItems) {
-        setLikedItems(JSON.parse(storedLikedItems));
+      const res = await axios.get(`${BASE_URL}/liked_items?userId=${userId}`);
+      console.log("Fetched Liked Items:", res.data.likedItems);
+      if (res.status === 200) {
+        setLikedItems(res.data.likedItems);
+      } else {
+        console.error("Failed to fetch liked items:", res.data.message);
       }
     } catch (error) {
-      console.error("Error fetching liked items from local storage:", error);
+      console.error("Failed to fetch liked items from DB:", error);
     }
   };
 
@@ -120,36 +125,46 @@ function App() {
     navigate("/"); // Redirect to home on logout
   };
 
-  const handleLike = (item, type) => {
-    const updatedLikedItems = [...likedItems];
-    const likedItemIndex = likedItems.findIndex(
-      (likedItem) => likedItem.type === type && likedItem.item.id === item.id
-    );
+  const handleLike = async (item, type) => {
+    const isAlreadyLiked = isLiked(item, type);
+    const updatedLikedItems = isAlreadyLiked
+      ? likedItems.filter(
+          (likedItem) =>
+            !(likedItem.item_type === type && likedItem.item_id === item.id) // Remove the liked item
+        )
+      : [...likedItems, { item_type: type, item_id: item.id, name: item.name }]; // Add the liked item
 
-    if (likedItemIndex !== -1) {
-      updatedLikedItems.splice(likedItemIndex, 1);
-    } else {
-      updatedLikedItems.push({ type, item });
-    }
+    setLikedItems(updatedLikedItems); // Update the state to trigger re-render
 
-    setLikedItems(updatedLikedItems);
-
-    const apiUrl = BASE_URL + (likedItemIndex !== -1 ? "/unlike" : "/like");
-    axios
-      .post(apiUrl, {
+    const endpoint = isAlreadyLiked ? "/unlike" : "/like";
+    try {
+      await axios.post(`${BASE_URL}${endpoint}`, {
         item: item.id,
         type,
         name: item.name,
         userId: userProfile?.id,
-      })
-      .catch((error) => {
-        console.error("Error updating liked items:", error);
       });
+    } catch (error) {
+      console.error(
+        `Error trying to ${isAlreadyLiked ? "unlike" : "like"} item:`,
+        error
+      );
+    }
   };
 
   const isLiked = (item, type) => {
+    console.log("Checking liked status:", {
+      currentItemId: item.id,
+      likedItems,
+      matches: likedItems.some(
+        (likedItem) =>
+          likedItem.item_type === type && likedItem.item_id === item.id // Compare item_id with item.id
+      ),
+    });
+
     return likedItems.some(
-      (likedItem) => likedItem.type === type && likedItem.item.id === item.id
+      (likedItem) =>
+        likedItem.item_type === type && likedItem.item_id === item.id // Compare item_id with item.id
     );
   };
 
@@ -195,7 +210,7 @@ function App() {
                 searchKey={searchKey}
               />
             ) : (
-              <h2>Please login</h2>
+              <h2>Please login to browse</h2>
             )}
           </div>
         )}
