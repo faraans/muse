@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const Search = ({ setArtists, setAlbums, setSearchKey, token }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+const Search = ({ setArtists, setAlbums, token }) => {
+  const [searchTerm, setSearchTerm] = useState(""); // Local state for search term
 
   const handleSearch = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent form submission from refreshing the page
+
+    if (!searchTerm.trim()) return; // Avoid search if input is empty
+
     try {
-      const { data } = await axios.get("https://api.spotify.com/v1/search", {
+      const response = await axios.get("https://api.spotify.com/v1/search", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -16,27 +19,26 @@ const Search = ({ setArtists, setAlbums, setSearchKey, token }) => {
           type: "artist,album",
         },
       });
-      setArtists(data.artists.items);
-      setAlbums(data.albums.items);
+
+      // Set the results if data is received
+      setArtists(response.data.artists.items);
+      setAlbums(response.data.albums.items);
     } catch (error) {
-      console.error("Error searching artists:", error);
-      if (error.response && error.response.status === 401) {
-      }
+      console.error("Error searching:", error);
     }
   };
 
   return (
-    <form onSubmit={handleSearch}>
-      <input
-        className="bg-neutral-900 input"
-        placeholder="Search music..."
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setSearchKey(e.target.value);
-        }}
-      />
-    </form>
+    <div>
+      <form onSubmit={handleSearch}> {/* Handle form submission */}
+        <input
+          className="bg-neutral-900 input"
+          placeholder="Search music..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)} // Update the search term on change
+        />
+      </form>
+    </div>
   );
 };
 

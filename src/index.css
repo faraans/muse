@@ -32,6 +32,7 @@
 
 .main-title {
   font-family: "Gilroy-Bold", sans-serif;
+  border-radius: 50px;
 }
 
 .search-wrapper {
@@ -81,13 +82,7 @@ nav {
 
 .search {
   width: 100%;
-  background: rgba(
-    255,
-    255,
-    255,
-    0.1
-  );
-
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .tab-content {

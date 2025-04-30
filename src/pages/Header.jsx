@@ -1,11 +1,5 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  CLIENT_ID,
-  REDIRECT_URI,
-  AUTH_ENDPOINT,
-  RESPONSE_TYPE,
-} from "../constants";
 
 const Header = ({ accessToken, onLogout, userProfile }) => {
   const navigate = useNavigate();
@@ -39,10 +33,10 @@ const Header = ({ accessToken, onLogout, userProfile }) => {
         <div>
           {!accessToken ? (
             <a
-              href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
+              href="http://localhost:8000/login"
               className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
             >
-              Login to Spotify
+              Login with Spotify
             </a>
           ) : (
             <button

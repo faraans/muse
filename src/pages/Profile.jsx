@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
 import { Favorites } from "./Favorites/Favorites";
 
-const Profile = ({ accessToken }) => {
+const Profile = () => {
   const location = useLocation();
-  const userProfile = location.state?.userProfile || {};
+  const navigate = useNavigate();
+
+  // Fetch the userProfile and accessToken from location.state or localStorage
+  const locationUserProfile = location.state?.userProfile || {};
+  const locationToken = location.state?.accessToken || localStorage.getItem("accessToken");
+
   const [displayName, setDisplayName] = useState(
-    userProfile.display_name || "No Display Name"
+    locationUserProfile.display_name || "No Display Name"
   );
-  const [userId, setUserId] = useState(userProfile.id || "");
+  const [userId, setUserId] = useState(locationUserProfile.id || "");
+  const [accessToken, setAccessToken] = useState(locationToken);
 
   useEffect(() => {
+    // If we have accessToken, fetch user profile if userId is missing
     const fetchUserProfile = async () => {
       try {
         const response = await axios.get("https://api.spotify.com/v1/me", {
@@ -25,23 +32,34 @@ const Profile = ({ accessToken }) => {
         setUserId(profile.id);
       } catch (error) {
         console.error("Error fetching user profile:", error);
+        // If there's an error fetching the profile, redirect to home page
+        navigate("/");
       }
     };
 
-    if (accessToken && !userProfile.id) {
+    // Fetch user profile only if no userId is found
+    if (accessToken && !userId) {
       fetchUserProfile();
     }
-  }, [accessToken, userProfile.id]);
+  }, [accessToken, userId, navigate]);
 
   const logout = () => {
-    window.localStorage.removeItem("accessToken");
+    localStorage.removeItem("accessToken");
     window.location.href = "/";
   };
+
+  if (!accessToken) {
+    return (
+      <div>
+        <p>You must log in to view the profile.</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <Header
-        userProfile={userProfile}
+        userProfile={{ display_name: displayName }}
         accessToken={accessToken}
         onLogout={logout}
       />
@@ -51,10 +69,7 @@ const Profile = ({ accessToken }) => {
             <div className="hero-main">
               <div className="hero-text">
                 <h1>{displayName}'s Profile</h1>
-                <p>
-                  User ID: {userId}
-                  <br />
-                </p>
+                <p>User ID: {userId}</p>
               </div>
             </div>
           </div>
@@ -62,7 +77,7 @@ const Profile = ({ accessToken }) => {
       </section>
       <section>
         <h2>
-          <Favorites accessToken={accessToken} userProfile={userProfile} />
+          <Favorites accessToken={accessToken} userProfile={{ id: userId }} />
         </h2>
       </section>
     </>
