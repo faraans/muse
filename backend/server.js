@@ -263,7 +263,7 @@ app.get("/callback", async (req, res) => {
     const { access_token, refresh_token } = tokenResponse.data;
 
     res.redirect(
-      `http://localhost:5173?access_token=${access_token}&refresh_token=${refresh_token}`
+      `http://127.0.0.1:5173?access_token=${access_token}&refresh_token=${refresh_token}`
     );
   } catch (err) {
     console.error("Error getting tokens:", err);
