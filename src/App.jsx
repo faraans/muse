@@ -34,7 +34,8 @@ function App() {
     if (accessToken) {
       setToken(accessToken);
       localStorage.setItem("accessToken", accessToken);
-      navigate("/profile", { state: { userProfile, accessToken } }); // Redirect to profile after login
+      localStorage.setItem("tokenExpiry", Date.now() + 55 * 60 * 1000);
+      navigate("/profile", { state: { userProfile, accessToken } });
     }
 
     if (refreshToken) {
@@ -44,31 +45,54 @@ function App() {
 
     const storedAccessToken = localStorage.getItem("accessToken");
     const storedRefreshToken = localStorage.getItem("refreshToken");
-
-    if (storedAccessToken) {
-      setToken(storedAccessToken);
-      fetchUserProfile(storedAccessToken).then((profile) => {
-        if (profile) {
-          setUserProfile(profile);
-          fetchLikedItems(profile.id); // Fetch liked items after setting profile
-        }
-      });
-    }
+    const tokenExpiry = localStorage.getItem("tokenExpiry");
 
     if (storedRefreshToken) {
       setRefreshToken(storedRefreshToken);
     }
+
+    if (storedAccessToken) {
+      const isExpired = !tokenExpiry || Date.now() > parseInt(tokenExpiry);
+      if (isExpired && storedRefreshToken) {
+        axios
+          .get(`${BASE_URL}/refresh_token?refresh_token=${storedRefreshToken}`)
+          .then((res) => {
+            const newToken = res.data.access_token;
+            setToken(newToken);
+            localStorage.setItem("accessToken", newToken);
+            localStorage.setItem("tokenExpiry", Date.now() + 55 * 60 * 1000);
+            return fetchUserProfile(newToken);
+          })
+          .then((profile) => {
+            if (profile) {
+              setUserProfile(profile);
+              fetchLikedItems(profile.id);
+            }
+          })
+          .catch(() => logout());
+      } else {
+        setToken(storedAccessToken);
+        fetchUserProfile(storedAccessToken).then((profile) => {
+          if (profile) {
+            setUserProfile(profile);
+            fetchLikedItems(profile.id);
+          }
+        });
+      }
+    }
   }, []);
 
   const refreshAccessToken = async () => {
-    if (!refreshToken) return;
+    const storedRefreshToken = localStorage.getItem("refreshToken");
+    if (!storedRefreshToken) return;
     try {
       const res = await axios.get(
-        `${BASE_URL}/refresh_token?refresh_token=${refreshToken}`
+        `${BASE_URL}/refresh_token?refresh_token=${storedRefreshToken}`
       );
       const newAccessToken = res.data.access_token;
       setToken(newAccessToken);
       localStorage.setItem("accessToken", newAccessToken);
+      localStorage.setItem("tokenExpiry", Date.now() + 55 * 60 * 1000);
     } catch (err) {
       console.error("Failed to refresh token:", err);
       logout();
@@ -121,8 +145,9 @@ function App() {
     setRefreshToken("");
     window.localStorage.removeItem("accessToken");
     window.localStorage.removeItem("refreshToken");
+    window.localStorage.removeItem("tokenExpiry");
     window.location.reload();
-    navigate("/"); // Redirect to home on logout
+    navigate("/");
   };
 
   const handleLike = async (item, type) => {
