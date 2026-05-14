@@ -220,7 +220,6 @@ app.get("/liked_items", async (req, res) => {
 app.get("/callback", async (req, res) => {
   const code = req.query.code;
 
-  // Request access token using the authorization code
   try {
     const tokenResponse = await axios.post(
       "https://accounts.spotify.com/api/token",
@@ -228,37 +227,11 @@ app.get("/callback", async (req, res) => {
         grant_type: "authorization_code",
         code: code,
         redirect_uri: REDIRECT_URI,
-        client_id: CLIENT_ID, // Use CLIENT_ID from .env
-        client_secret: CLIENT_SECRET, // Use CLIENT_SECRET from .env
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
       }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
-
-    // Handle refresh token
-    app.get("/refresh_token", async (req, res) => {
-      const refresh_token = req.query.refresh_token;
-
-      const response = await axios.post(
-        "https://accounts.spotify.com/api/token",
-        querystring.stringify({
-          grant_type: "refresh_token",
-          refresh_token: refresh_token,
-          client_id: CLIENT_ID, // Use CLIENT_ID from .env
-          client_secret: CLIENT_SECRET, // Use CLIENT_SECRET from .env
-        }),
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
-
-      res.json(response.data); // returns new access_token
-    });
 
     const { access_token, refresh_token } = tokenResponse.data;
 
@@ -268,6 +241,30 @@ app.get("/callback", async (req, res) => {
   } catch (err) {
     console.error("Error getting tokens:", err);
     res.status(500).send("Error during the Spotify authentication process");
+  }
+});
+
+app.get("/refresh_token", async (req, res) => {
+  const refresh_token = req.query.refresh_token;
+
+  if (!refresh_token) return res.status(400).send("Missing refresh token");
+
+  try {
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      querystring.stringify({
+        grant_type: "refresh_token",
+        refresh_token: refresh_token,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error refreshing token:", err);
+    res.status(500).send("Error refreshing access token");
   }
 });
 
