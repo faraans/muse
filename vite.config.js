@@ -16,7 +16,6 @@ export default defineConfig({
       '/favorites': 'http://localhost:8000',
       '/favorite': 'http://localhost:8000',
       '/unfavorite': 'http://localhost:8000',
-      '/profile': 'http://localhost:8000',
       '/refresh_token': 'http://localhost:8000',
     },
   },
