@@ -7,6 +7,7 @@ import Search from "./assets/Search";
 import ArtistCard from "./assets/ArtistCard";
 import AlbumCard from "./assets/AlbumCard";
 import Profile from "./pages/Profile";
+import LoginPage from "./pages/LoginPage";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
 const REDIRECT_URI = "http://127.0.0.1:5173/";
@@ -213,32 +214,27 @@ function App() {
       />
     ));
 
-  const HomePage = () => (
+  const HomePage = () => {
+    if (!token) return <LoginPage />;
+
+    return (
     <>
-      {location.pathname !== "/login" && (
-        <Header
-          userProfile={userProfile}
-          accessToken={token}
-          onLogout={logout}
-          token={token}
-        />
-      )}
+      <Header
+        userProfile={userProfile}
+        accessToken={token}
+        onLogout={logout}
+        token={token}
+      />
       <div className="main-page-container my-5">
-        {location.pathname !== "/login" && (
-          <div className="search-wrapper h-10">
-            {token ? (
-              <Search
-                setArtists={setArtists}
-                setAlbums={setAlbums}
-                setSearchKey={setSearchKey}
-                token={token}
-                searchKey={searchKey}
-              />
-            ) : (
-              <h2>Please login to browse</h2>
-            )}
-          </div>
-        )}
+        <div className="search-wrapper h-10">
+          <Search
+            setArtists={setArtists}
+            setAlbums={setAlbums}
+            setSearchKey={setSearchKey}
+            token={token}
+            searchKey={searchKey}
+          />
+        </div>
         <button
           onClick={() => setIsOpen((prev) => !prev)}
           className="main-title my-3 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
@@ -283,7 +279,8 @@ function App() {
         )}
       </div>
     </>
-  );
+    );
+  };
 
   return (
     <Routes>
