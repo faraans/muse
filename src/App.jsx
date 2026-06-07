@@ -14,8 +14,8 @@ const REDIRECT_URI = "http://127.0.0.1:5173/";
 const BASE_URL = "http://localhost:8000";
 
 function App() {
-  const [token, setToken] = useState("");
-  const [refreshToken, setRefreshToken] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("accessToken") || "");
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || "");
   const [searchKey, setSearchKey] = useState(""); // Use searchKey here in App
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);

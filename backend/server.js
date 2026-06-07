@@ -35,6 +35,12 @@ promisePool
   .then(() => console.log("Database connected successfully"))
   .catch((err) => console.error("Database connection error", err));
 
+promisePool
+  .query(
+    "CREATE TABLE IF NOT EXISTS `user_bios` (`user_id` VARCHAR(255) PRIMARY KEY, `bio` TEXT)"
+  )
+  .catch((err) => console.error("Error creating user_bios table:", err));
+
 // Endpoint for liking an item
 app.post("/like", async (req, res) => {
   const { item, type, name, userId } = req.body;
@@ -177,6 +183,36 @@ app.get("/", async (req, res) => {
     res
       .status(500)
       .send({ error: "Internal Server Error", message: error.message });
+  }
+});
+
+// Get bio for a user
+app.get("/bio/:userId", async (req, res) => {
+  try {
+    const [rows] = await promisePool.query(
+      "SELECT bio FROM user_bios WHERE user_id = ?",
+      [req.params.userId]
+    );
+    res.status(200).json({ bio: rows[0]?.bio || "" });
+  } catch (err) {
+    console.error("Error fetching bio:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Save bio for a user
+app.post("/bio", async (req, res) => {
+  const { userId, bio } = req.body;
+  if (!userId) return res.status(400).json({ error: "userId is required" });
+  try {
+    await promisePool.query(
+      "INSERT INTO user_bios (user_id, bio) VALUES (?, ?) ON DUPLICATE KEY UPDATE bio = ?",
+      [userId, bio, bio]
+    );
+    res.status(200).json({ message: "Bio saved" });
+  } catch (err) {
+    console.error("Error saving bio:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
