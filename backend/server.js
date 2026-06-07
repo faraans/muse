@@ -41,23 +41,26 @@ promisePool
   )
   .catch((err) => console.error("Error creating user_bios table:", err));
 
+promisePool
+  .query("ALTER TABLE `liked_items` ADD COLUMN `image_url` VARCHAR(500)")
+  .catch((err) => {
+    if (err.code !== "ER_DUP_FIELDNAME") {
+      console.error("Error adding image_url column:", err);
+    }
+  });
+
 // Endpoint for liking an item
 app.post("/like", async (req, res) => {
-  const { item, type, name, userId } = req.body;
+  const { item, type, name, userId, imageUrl } = req.body;
 
-  // Validation: Ensure all fields are provided
   if (!item || !type || !name || !userId) {
     return res.status(400).send("Missing required fields");
   }
 
-  // Log the incoming request body
-  console.log("Incoming /like request body:", req.body);
-
   const sql =
-    "INSERT IGNORE INTO `liked_items` (`item_id`, `item_type`, `name`, `user_id`) VALUES (?, ?, ?, ?)";
+    "INSERT IGNORE INTO `liked_items` (`item_id`, `item_type`, `name`, `user_id`, `image_url`) VALUES (?, ?, ?, ?, ?)";
   try {
-    await promisePool.query(sql, [item, type, name, userId]);
-    console.log("Item liked successfully");
+    await promisePool.query(sql, [item, type, name, userId, imageUrl || null]);
     res.status(200).send("Item liked successfully");
   } catch (err) {
     // Log the SQL error message
