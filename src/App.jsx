@@ -158,7 +158,7 @@ function App() {
           (likedItem) =>
             !(likedItem.item_type === type && likedItem.item_id === item.id) // Remove the liked item
         )
-      : [...likedItems, { item_type: type, item_id: item.id, name: item.name }]; // Add the liked item
+      : [...likedItems, { item_type: type, item_id: item.id, name: item.name, image_url: item.images?.[0]?.url || null }]; // Add the liked item
 
     setLikedItems(updatedLikedItems); // Update the state to trigger re-render
 
@@ -169,6 +169,7 @@ function App() {
         type,
         name: item.name,
         userId: userProfile?.id,
+        imageUrl: item.images?.[0]?.url || null,
       });
     } catch (error) {
       console.error(
@@ -287,7 +288,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route
         path="/profile"
-        element={<Profile accessToken={token} userProfile={userProfile} />}
+        element={<Profile accessToken={token} userProfile={userProfile} likedItems={likedItems} />}
       />
     </Routes>
   );

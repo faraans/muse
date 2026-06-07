@@ -3,10 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "./Header";
 import { Favorites } from "./Favorites/Favorites";
+import LikedGrid from "../components/LikedGrid";
 
 const BASE_URL = "http://localhost:8000";
 
-const Profile = () => {
+const Profile = ({ likedItems = [] }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -186,6 +187,11 @@ const Profile = () => {
             Favorites
           </h2>
           <Favorites accessToken={accessToken} userProfile={{ id: userId }} />
+
+          {/* Liked Artists & Albums */}
+          <div className="mt-10 pb-1">
+            <LikedGrid likedItems={likedItems} />
+          </div>
         </div>
       </div>
     </>
