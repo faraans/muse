@@ -16,11 +16,21 @@ const AlbumCard = ({ album, onLike, isLiked, userId, displayName, userReview, on
           className="cursor-pointer"
           onClick={() => setShowDetail(true)}
         >
-          {album.images.length ? (
-            <img width={"100%"} src={album.images[0].url} alt="" />
-          ) : (
-            <img width={"100%"} src="default_album_image.png" alt="" />
-          )}
+          <div className="relative">
+            {album.images.length ? (
+              <img width={"100%"} src={album.images[0].url} alt="" />
+            ) : (
+              <img width={"100%"} src="default_album_image.png" alt="" />
+            )}
+            <div className="overlay" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => onLike(album, "album")}>
+                {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
+              </button>
+              <button onClick={() => setShowReview(true)}>
+                <MdRateReview />
+              </button>
+            </div>
+          </div>
           {album.name}
         </div>
         {userReview && (
@@ -28,14 +38,6 @@ const AlbumCard = ({ album, onLike, isLiked, userId, displayName, userReview, on
             <Stars rating={parseFloat(userReview.rating)} size="xs" />
           </div>
         )}
-        <div className="overlay">
-          <button onClick={() => onLike(album, "album")}>
-            {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
-          </button>
-          <button onClick={() => setShowReview(true)}>
-            <MdRateReview />
-          </button>
-        </div>
       </div>
 
       {showReview && (

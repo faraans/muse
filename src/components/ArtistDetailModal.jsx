@@ -45,7 +45,7 @@ export default function ArtistDetailModal({ artist, accessToken, onClose, onAlbu
             <h2 className="text-white font-bold text-xl">{artist.name}</h2>
             {artist.followers?.total && (
               <p className="text-neutral-400 text-sm">
-                {artist.followers.total.toLocaleString()} followers
+                {artist.followers.total.toLocaleString()} followers on Spotify
               </p>
             )}
             <a
