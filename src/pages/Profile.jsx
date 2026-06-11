@@ -4,6 +4,7 @@ import axios from "axios";
 import Header from "./Header";
 import { Favorites } from "./Favorites/Favorites";
 import LikedGrid from "../components/LikedGrid";
+import UserReviews from "../components/UserReviews";
 
 const BASE_URL = "http://localhost:8000";
 
@@ -188,8 +189,16 @@ const Profile = ({ likedItems = [] }) => {
           </h2>
           <Favorites accessToken={accessToken} userProfile={{ id: userId }} />
 
+          {/* Reviews */}
+          <div className="mt-10">
+            <h2 className="text-violet-400 text-sm font-semibold uppercase tracking-wider mb-4">
+              Reviews
+            </h2>
+            <UserReviews userId={userId} displayName={displayName} />
+          </div>
+
           {/* Liked Artists & Albums */}
-          <div className="mt-10 pb-1">
+          <div className="mt-10 pb-16">
             <LikedGrid likedItems={likedItems} />
           </div>
         </div>

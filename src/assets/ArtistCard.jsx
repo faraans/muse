@@ -1,35 +1,48 @@
-// components/ArtistCard.js
-import React from "react";
-import { AiOutlineHeart, AiFillHeart, AiOutlineLink } from "react-icons/ai";
+import React, { useState } from "react";
+import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import ArtistDetailModal from "../components/ArtistDetailModal";
+import AlbumDetailModal from "../components/AlbumDetailModal";
 
-const ArtistCard = ({ artist, onLike, isLiked }) => {
+const ArtistCard = ({ artist, onLike, isLiked, accessToken }) => {
+  const [showArtist, setShowArtist] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+
   return (
-    <div key={artist.id} className="artist-display">
-      <a
-        href={artist.external_urls.spotify}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {artist.images.length ? (
-          <img width={"100%"} src={artist.images[0].url} alt="" />
-        ) : (
-          <img width={"100%"} src="default_artist_image.png" alt="" />
-        )}
-        {artist.name}
-      </a>
-      <div className="overlay">
-        <button onClick={() => onLike(artist, "artist")}>
-          {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
-        </button>
-        <a
-          href={artist.external_urls.spotify}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <AiOutlineLink />
-        </a>
+    <>
+      <div className="artist-display">
+        <div className="cursor-pointer" onClick={() => setShowArtist(true)}>
+          {artist.images.length ? (
+            <img width={"100%"} src={artist.images[0].url} alt="" />
+          ) : (
+            <img width={"100%"} src="default_artist_image.png" alt="" />
+          )}
+          {artist.name}
+        </div>
+        <div className="overlay">
+          <button onClick={() => onLike(artist, "artist")}>
+            {isLiked ? <AiFillHeart /> : <AiOutlineHeart />}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {showArtist && (
+        <ArtistDetailModal
+          artist={artist}
+          accessToken={accessToken}
+          onClose={() => setShowArtist(false)}
+          onAlbumClick={(album) => {
+            setShowArtist(false);
+            setSelectedAlbum(album);
+          }}
+        />
+      )}
+      {selectedAlbum && (
+        <AlbumDetailModal
+          album={selectedAlbum}
+          onClose={() => setSelectedAlbum(null)}
+        />
+      )}
+    </>
   );
 };
 

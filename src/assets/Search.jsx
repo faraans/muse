@@ -1,28 +1,28 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const Search = ({ setArtists, setAlbums, token }) => {
-  const [searchTerm, setSearchTerm] = useState(""); // Local state for search term
+const Search = ({ setResults, token }) => {
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = async (e) => {
-    e.preventDefault(); // Prevent form submission from refreshing the page
-
-    if (!searchTerm.trim()) return; // Avoid search if input is empty
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
 
     try {
       const response = await axios.get("https://api.spotify.com/v1/search", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          q: searchTerm,
-          type: "artist,album",
-        },
+        headers: { Authorization: `Bearer ${token}` },
+        params: { q: searchTerm, type: "artist,album", limit: 20 },
       });
 
-      // Set the results if data is received
-      setArtists(response.data.artists.items);
-      setAlbums(response.data.albums.items);
+      const artists = response.data.artists.items.map((a) => ({ ...a, type: "artist" }));
+      const albums = response.data.albums.items.map((a) => ({ ...a, type: "album" }));
+      const merged = [];
+      const max = Math.max(artists.length, albums.length);
+      for (let i = 0; i < max; i++) {
+        if (artists[i]) merged.push(artists[i]);
+        if (albums[i]) merged.push(albums[i]);
+      }
+      setResults(merged);
     } catch (error) {
       console.error("Error searching:", error);
     }
@@ -35,7 +35,7 @@ const Search = ({ setArtists, setAlbums, token }) => {
           className="bg-neutral-900 input"
           placeholder="Search music..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)} // Update the search term on change
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </form>
     </div>
