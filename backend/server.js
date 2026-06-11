@@ -10,68 +10,61 @@ const port = 8000;
 app.use(cors());
 app.use(express.json());
 
-// Define the Spotify credentials and redirect URI from environment variables
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 
-// Create a MySQL connection pool instead of a single connection
 const db = mysql.createPool({
   host: "localhost",
   user: "root",
   password: "password",
   database: "muse-db",
-  waitForConnections: true, // Ensures connections are queued while others are in use
-  connectionLimit: 10, // Max number of connections in the pool
-  queueLimit: 0, // Unlimited waiting queries
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-// Use the promise-based pool for cleaner async/await code
 const promisePool = db.promise();
 
-// Test the MySQL connection at the start
 promisePool
   .query("SELECT 1")
   .then(() => console.log("Database connected successfully"))
   .catch((err) => console.error("Database connection error", err));
 
-promisePool
-  .query(
-    "CREATE TABLE IF NOT EXISTS `user_bios` (`user_id` VARCHAR(255) PRIMARY KEY, `bio` TEXT)"
-  )
-  .catch((err) => console.error("Error creating user_bios table:", err));
-
-promisePool.query(`
-  CREATE TABLE IF NOT EXISTS \`reviews\` (
-    \`id\` INT AUTO_INCREMENT PRIMARY KEY,
-    \`user_id\` VARCHAR(255) NOT NULL,
-    \`display_name\` VARCHAR(255),
-    \`album_id\` VARCHAR(255) NOT NULL,
-    \`album_name\` VARCHAR(500),
-    \`album_image\` VARCHAR(500),
-    \`rating\` DECIMAL(2,1) NOT NULL,
-    \`review_text\` TEXT,
-    \`is_private\` BOOLEAN NOT NULL DEFAULT FALSE,
-    \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY \`unique_user_album\` (\`user_id\`, \`album_id\`)
-  )
-`).catch((err) => console.error("Error creating reviews table:", err));
-
-promisePool
-  .query("ALTER TABLE `reviews` MODIFY COLUMN `rating` DECIMAL(2,1) NOT NULL")
-  .catch((err) => { if (err.code !== "ER_BAD_FIELD_ERROR") console.error("Error modifying rating column:", err); });
-
-promisePool
-  .query("ALTER TABLE `reviews` ADD COLUMN `display_name` VARCHAR(255) AFTER `user_id`")
-  .catch((err) => { if (err.code !== "ER_DUP_FIELDNAME") console.error("Error adding display_name column:", err); });
-
-promisePool
-  .query("ALTER TABLE `liked_items` ADD COLUMN `image_url` VARCHAR(500)")
-  .catch((err) => {
-    if (err.code !== "ER_DUP_FIELDNAME") {
-      console.error("Error adding image_url column:", err);
-    }
-  });
+Promise.all([
+  promisePool
+    .query("CREATE TABLE IF NOT EXISTS `user_bios` (`user_id` VARCHAR(255) PRIMARY KEY, `bio` TEXT)")
+    .catch((err) => console.error("Error creating user_bios table:", err)),
+  promisePool.query(`
+    CREATE TABLE IF NOT EXISTS \`reviews\` (
+      \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+      \`user_id\` VARCHAR(255) NOT NULL,
+      \`display_name\` VARCHAR(255),
+      \`album_id\` VARCHAR(255) NOT NULL,
+      \`album_name\` VARCHAR(500),
+      \`album_image\` VARCHAR(500),
+      \`rating\` DECIMAL(2,1) NOT NULL,
+      \`review_text\` TEXT,
+      \`is_private\` BOOLEAN NOT NULL DEFAULT FALSE,
+      \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY \`unique_user_album\` (\`user_id\`, \`album_id\`)
+    )
+  `).catch((err) => console.error("Error creating reviews table:", err)),
+  promisePool.query(`
+    CREATE TABLE IF NOT EXISTS \`follows\` (
+      \`follower_id\` VARCHAR(255) NOT NULL,
+      \`following_id\` VARCHAR(255) NOT NULL,
+      \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`follower_id\`, \`following_id\`)
+    )
+  `).catch((err) => console.error("Error creating follows table:", err)),
+  promisePool
+    .query("ALTER TABLE `reviews` ADD COLUMN `display_name` VARCHAR(255) AFTER `user_id`")
+    .catch((err) => { if (err.code !== "ER_DUP_FIELDNAME") console.error("Error adding display_name column:", err); }),
+  promisePool
+    .query("ALTER TABLE `liked_items` ADD COLUMN `image_url` VARCHAR(500)")
+    .catch((err) => { if (err.code !== "ER_DUP_FIELDNAME") console.error("Error adding image_url column:", err); }),
+]);
 
 // Endpoint for liking an item
 app.post("/like", async (req, res) => {
@@ -88,7 +81,7 @@ app.post("/like", async (req, res) => {
     res.status(200).send("Item liked successfully");
   } catch (err) {
     // Log the SQL error message
-    console.error("SQL Error:", err);
+    console.error("Error liking item:", err);
     res
       .status(500)
       .send({ error: "Internal Server Error", message: err.message });
@@ -99,7 +92,7 @@ app.post("/like", async (req, res) => {
 app.post("/unlike", async (req, res) => {
   const { item, userId } = req.body;
 
-  // Validation: Ensure all fields are provided
+
   if (!item || !userId) {
     return res.status(400).send("Missing required fields");
   }
@@ -120,7 +113,7 @@ app.post("/unlike", async (req, res) => {
 app.post("/favorite", async (req, res) => {
   const { user_id, album_id, album_name, album_image, album_url } = req.body;
 
-  // Validation: Ensure all fields are provided
+
   if (!user_id || !album_id || !album_name || !album_image || !album_url) {
     return res.status(400).send("Missing required fields");
   }
@@ -148,7 +141,7 @@ app.post("/favorite", async (req, res) => {
 app.post("/unfavorite", async (req, res) => {
   const { user_id, album_id } = req.body;
 
-  // Validation: Ensure all fields are provided
+
   if (!user_id || !album_id) {
     return res.status(400).send("Missing required fields");
   }
@@ -182,8 +175,6 @@ app.get("/favorites/:user_id", async (req, res) => {
 // Add this route to your server
 app.get("/profile", async (req, res) => {
   const accessToken = req.query.access_token;
-
-  console.log("Access token received:", accessToken); // Log the access token
 
   if (!accessToken) {
     return res.status(400).send("Access token is required");
@@ -291,6 +282,71 @@ app.get("/", async (req, res) => {
   }
 });
 
+// Follow a user
+app.post("/follow", async (req, res) => {
+  const { followerId, followingId } = req.body;
+  if (!followerId || !followingId || followerId === followingId)
+    return res.status(400).json({ error: "Invalid follow request" });
+  try {
+    await promisePool.query(
+      "INSERT IGNORE INTO follows (follower_id, following_id) VALUES (?, ?)",
+      [followerId, followingId]
+    );
+    res.status(200).json({ message: "Followed" });
+  } catch (err) {
+    console.error("Error following user:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Unfollow a user
+app.post("/unfollow", async (req, res) => {
+  const { followerId, followingId } = req.body;
+  if (!followerId || !followingId)
+    return res.status(400).json({ error: "Missing fields" });
+  try {
+    await promisePool.query(
+      "DELETE FROM follows WHERE follower_id = ? AND following_id = ?",
+      [followerId, followingId]
+    );
+    res.status(200).json({ message: "Unfollowed" });
+  } catch (err) {
+    console.error("Error unfollowing user:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get follower + following counts for a user
+app.get("/follow/counts/:userId", async (req, res) => {
+  try {
+    const [[followerRows], [followingRows]] = await Promise.all([
+      promisePool.query("SELECT COUNT(*) AS followers FROM follows WHERE following_id = ?", [req.params.userId]),
+      promisePool.query("SELECT COUNT(*) AS following FROM follows WHERE follower_id = ?", [req.params.userId]),
+    ]);
+    res.status(200).json({ followers: followerRows[0].followers, following: followingRows[0].following });
+  } catch (err) {
+    console.error("Error fetching follow counts:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Check if a user is following another
+app.get("/is-following", async (req, res) => {
+  const { followerId, followingId } = req.query;
+  if (!followerId || !followingId)
+    return res.status(400).json({ error: "Missing fields" });
+  try {
+    const [rows] = await promisePool.query(
+      "SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?",
+      [followerId, followingId]
+    );
+    res.status(200).json({ isFollowing: rows.length > 0 });
+  } catch (err) {
+    console.error("Error checking follow status:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Get bio for a user
 app.get("/bio/:userId", async (req, res) => {
   try {
@@ -326,9 +382,9 @@ app.get("/login", (req, res) => {
   const scope = "user-read-private user-read-email";
   const queryParams = querystring.stringify({
     response_type: "code",
-    client_id: CLIENT_ID, // Use CLIENT_ID from .env
+    client_id: CLIENT_ID,
     scope: scope,
-    redirect_uri: REDIRECT_URI, // Use REDIRECT_URI from .env
+    redirect_uri: REDIRECT_URI,
   });
 
   res.redirect("https://accounts.spotify.com/authorize?" + queryParams);
@@ -336,21 +392,20 @@ app.get("/login", (req, res) => {
 
 // Get liked items for a user
 app.get("/liked_items", async (req, res) => {
-  const { userId } = req.query; // Extract userId from query params
+  const { userId } = req.query;
 
   if (!userId) {
     return res.status(400).json({ message: "User ID is required" });
   }
 
   try {
-    // Fetch the liked items for the given userId from the database
     const [likedItems] = await promisePool.query(
       "SELECT * FROM liked_items WHERE user_id = ?",
       [userId]
     );
-    res.status(200).json({ likedItems }); // Send the liked items as a JSON response
+    res.status(200).json({ likedItems });
   } catch (error) {
-    console.error("Error fetching liked items:", error); // Log the error
+    console.error("Error fetching liked items:", error);
     res
       .status(500)
       .json({ message: "Failed to fetch liked items", error: error.message });

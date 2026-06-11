@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom"; // Use useNavigate and useLocation here
+import React, { useState, useEffect, useMemo } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from "./constants";
 import { AiOutlineCaretUp, AiOutlineCaretDown } from "react-icons/ai";
 import Header from "./pages/Header";
 import Search from "./assets/Search";
@@ -10,16 +11,11 @@ import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import LoginPage from "./pages/LoginPage";
 
-const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
-const REDIRECT_URI = "http://127.0.0.1:5173/";
-const BASE_URL = "http://localhost:8000";
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem("accessToken") || "");
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || "");
   const [results, setResults] = useState([]);
   const [state, setState] = useState("");
-  const [buttonText, setButtonText] = useState("muse");
   const [isOpen, setIsOpen] = useState(false);
   const [likedItems, setLikedItems] = useState([]);
   const [userReviews, setUserReviews] = useState([]);
@@ -67,8 +63,7 @@ function App() {
           .then((profile) => {
             if (profile) {
               setUserProfile(profile);
-              fetchLikedItems(profile.id);
-              fetchUserReviews(profile.id);
+              Promise.all([fetchLikedItems(profile.id), fetchUserReviews(profile.id)]);
             }
           })
           .catch(() => logout());
@@ -77,8 +72,7 @@ function App() {
         fetchUserProfile(storedAccessToken).then((profile) => {
           if (profile) {
             setUserProfile(profile);
-            fetchLikedItems(profile.id);
-            fetchUserReviews(profile.id);
+            Promise.all([fetchLikedItems(profile.id), fetchUserReviews(profile.id)]);
           }
         });
       }
@@ -108,11 +102,7 @@ function App() {
     }, 1000 * 60 * 50);
 
     return () => clearInterval(interval);
-  }, [refreshToken]);
-
-  useEffect(() => {
-    localStorage.setItem("likedItems", JSON.stringify(likedItems));
-  }, [likedItems]);
+  }, []);
 
   const fetchUserProfile = async (accessToken) => {
     try {
@@ -132,12 +122,7 @@ function App() {
     if (!userId) return;
     try {
       const res = await axios.get(`${BASE_URL}/liked_items?userId=${userId}`);
-      console.log("Fetched Liked Items:", res.data.likedItems);
-      if (res.status === 200) {
-        setLikedItems(res.data.likedItems);
-      } else {
-        console.error("Failed to fetch liked items:", res.data.message);
-      }
+      setLikedItems(res.data.likedItems);
     } catch (error) {
       console.error("Failed to fetch liked items from DB:", error);
     }
@@ -160,19 +145,15 @@ function App() {
     window.localStorage.removeItem("refreshToken");
     window.localStorage.removeItem("tokenExpiry");
     window.location.reload();
-    navigate("/");
   };
 
   const handleLike = async (item, type) => {
     const isAlreadyLiked = isLiked(item, type);
     const updatedLikedItems = isAlreadyLiked
-      ? likedItems.filter(
-          (likedItem) =>
-            !(likedItem.item_type === type && likedItem.item_id === item.id) // Remove the liked item
-        )
-      : [...likedItems, { item_type: type, item_id: item.id, name: item.name, image_url: item.images?.[0]?.url || null }]; // Add the liked item
+      ? likedItems.filter((li) => !(li.item_type === type && li.item_id === item.id))
+      : [...likedItems, { item_type: type, item_id: item.id, name: item.name, image_url: item.images?.[0]?.url || null }];
 
-    setLikedItems(updatedLikedItems); // Update the state to trigger re-render
+    setLikedItems(updatedLikedItems);
 
     const endpoint = isAlreadyLiked ? "/unlike" : "/like";
     try {
@@ -191,21 +172,13 @@ function App() {
     }
   };
 
-  const isLiked = (item, type) => {
-    console.log("Checking liked status:", {
-      currentItemId: item.id,
-      likedItems,
-      matches: likedItems.some(
-        (likedItem) =>
-          likedItem.item_type === type && likedItem.item_id === item.id // Compare item_id with item.id
-      ),
-    });
+  const isLiked = (item, type) =>
+    likedItems.some((li) => li.item_type === type && li.item_id === item.id);
 
-    return likedItems.some(
-      (likedItem) =>
-        likedItem.item_type === type && likedItem.item_id === item.id // Compare item_id with item.id
-    );
-  };
+  const userReviewMap = useMemo(
+    () => new Map(userReviews.map((r) => [r.album_id, r])),
+    [userReviews]
+  );
 
   const renderResults = (items) =>
     items.map((item) =>
@@ -225,7 +198,7 @@ function App() {
           isLiked={isLiked(item, "album")}
           userId={userProfile?.id}
           displayName={userProfile?.display_name}
-          userReview={userReviews.find((r) => r.album_id === item.id) || null}
+          userReview={userReviewMap.get(item.id) ?? null}
           onReviewSaved={() => fetchUserReviews(userProfile?.id)}
         />
       )
@@ -240,7 +213,6 @@ function App() {
         userProfile={userProfile}
         accessToken={token}
         onLogout={logout}
-        token={token}
       />
       <div className="main-page-container my-5">
         <div className="search-wrapper h-10">
@@ -253,16 +225,14 @@ function App() {
           onClick={() => setIsOpen((prev) => !prev)}
           className="main-title my-3 p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
         >
-          {buttonText}
+          {state || "muse"}
           {!isOpen ? <AiOutlineCaretDown /> : <AiOutlineCaretUp />}
         </button>
         {isOpen && (
           <div>
             <button
               onClick={() => {
-                const next = state === "artists" ? "" : "artists";
-                setButtonText(next || "muse");
-                setState(next);
+                setState(state === "artists" ? "" : "artists");
               }}
               className={`hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl bg-neutral-800 border-neutral-900 ${state === "artists" ? "text-white" : "text-violet-700"}`}
             >
@@ -271,9 +241,7 @@ function App() {
             <div className="py-2"></div>
             <button
               onClick={() => {
-                const next = state === "albums" ? "" : "albums";
-                setButtonText(next || "muse");
-                setState(next);
+                setState(state === "albums" ? "" : "albums");
               }}
               className={`hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl bg-neutral-800 border-neutral-900 ${state === "albums" ? "text-white" : "text-violet-700"}`}
             >
@@ -283,7 +251,7 @@ function App() {
         )}
         <p className="my-5"></p>
         {state === "artists" || state === "albums"
-          ? renderResults(results.filter((r) => r.type === state.slice(0, -1)))
+          ? renderResults(results.filter((r) => r.type === { artists: "artist", albums: "album" }[state]))
           : renderResults(results)}
       </div>
     </>
@@ -295,7 +263,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route
         path="/profile"
-        element={<Profile accessToken={token} userProfile={userProfile} likedItems={likedItems} />}
+        element={<Profile accessToken={token} userProfile={userProfile} likedItems={likedItems} onLogout={logout} />}
       />
       <Route
         path="/user/:userId"

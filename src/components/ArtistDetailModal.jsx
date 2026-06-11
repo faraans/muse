@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { AiOutlineLink } from "react-icons/ai";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 export default function ArtistDetailModal({ artist, accessToken, onClose, onAlbumClick }) {
   const [releases, setReleases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("album");
 
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   useEffect(() => {
     axios

@@ -2,41 +2,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { AiOutlineLink } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
-
-const BASE_URL = "http://localhost:8000";
-
-const Stars = ({ rating }) => (
-  <span className="inline-flex">
-    {[1, 2, 3, 4, 5].map((star) => {
-      const full = rating >= star;
-      const half = !full && rating >= star - 0.5;
-      return (
-        <span key={star} className="relative text-sm w-4 h-4 inline-flex items-center justify-center">
-          <span className="absolute inset-0 flex items-center justify-center text-neutral-600">★</span>
-          {(full || half) && (
-            <span
-              className="absolute inset-0 flex items-center justify-center text-violet-400"
-              style={{ clipPath: half ? "inset(0 50% 0 0)" : "none" }}
-            >
-              ★
-            </span>
-          )}
-        </span>
-      );
-    })}
-  </span>
-);
+import Stars from "./Stars";
+import useEscapeKey from "../hooks/useEscapeKey";
+import { BASE_URL } from "../constants";
 
 export default function AlbumDetailModal({ album, onClose }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   useEffect(() => {
     axios
@@ -102,7 +77,7 @@ export default function AlbumDetailModal({ album, onClose }) {
                   >
                     {review.display_name || "Anonymous"}
                   </button>
-                  <Stars rating={parseFloat(review.rating)} />
+                  <Stars rating={parseFloat(review.rating)} size="sm" />
                 </div>
                 {review.review_text && (
                   <p className="text-neutral-300 text-sm">{review.review_text}</p>
