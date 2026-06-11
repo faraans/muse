@@ -3,28 +3,7 @@ import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { MdRateReview } from "react-icons/md";
 import ReviewModal from "../components/ReviewModal";
 import AlbumDetailModal from "../components/AlbumDetailModal";
-
-const StarDisplay = ({ rating }) => (
-  <span className="inline-flex">
-    {[1, 2, 3, 4, 5].map((star) => {
-      const full = rating >= star;
-      const half = !full && rating >= star - 0.5;
-      return (
-        <span key={star} className="relative text-xs w-3 h-3 inline-flex items-center justify-center">
-          <span className="absolute inset-0 flex items-center justify-center text-neutral-600">★</span>
-          {(full || half) && (
-            <span
-              className="absolute inset-0 flex items-center justify-center text-violet-400"
-              style={{ clipPath: half ? "inset(0 50% 0 0)" : "none" }}
-            >
-              ★
-            </span>
-          )}
-        </span>
-      );
-    })}
-  </span>
-);
+import Stars from "../components/Stars";
 
 const AlbumCard = ({ album, onLike, isLiked, userId, displayName, userReview, onReviewSaved }) => {
   const [showReview, setShowReview] = useState(false);
@@ -46,7 +25,7 @@ const AlbumCard = ({ album, onLike, isLiked, userId, displayName, userReview, on
         </div>
         {userReview && (
           <div className="flex items-center gap-1 mt-1">
-            <StarDisplay rating={parseFloat(userReview.rating)} />
+            <Stars rating={parseFloat(userReview.rating)} size="xs" />
           </div>
         )}
         <div className="overlay">

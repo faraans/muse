@@ -1,5 +1,7 @@
 // constants.js
 
+export const BASE_URL = "http://localhost:8000";
+
 export const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
 export const REDIRECT_URI =
   "http://127.0.0.1:5173/" || "https://muse-react-app.netlify.app/";

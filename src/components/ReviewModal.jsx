@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-
-const BASE_URL = "http://localhost:8000";
+import useEscapeKey from "../hooks/useEscapeKey";
+import { BASE_URL } from "../constants";
 
 const StarPicker = ({ rating, setRating }) => {
   const [hovered, setHovered] = useState(0);
@@ -56,11 +56,7 @@ export default function ReviewModal({ album, userId, displayName, onClose, onSav
   const [isPrivate, setIsPrivate] = useState(!!existing?.is_private);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const handleSubmit = async () => {
     if (!rating) return;
