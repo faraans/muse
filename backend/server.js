@@ -41,6 +41,30 @@ promisePool
   )
   .catch((err) => console.error("Error creating user_bios table:", err));
 
+promisePool.query(`
+  CREATE TABLE IF NOT EXISTS \`reviews\` (
+    \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+    \`user_id\` VARCHAR(255) NOT NULL,
+    \`display_name\` VARCHAR(255),
+    \`album_id\` VARCHAR(255) NOT NULL,
+    \`album_name\` VARCHAR(500),
+    \`album_image\` VARCHAR(500),
+    \`rating\` DECIMAL(2,1) NOT NULL,
+    \`review_text\` TEXT,
+    \`is_private\` BOOLEAN NOT NULL DEFAULT FALSE,
+    \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY \`unique_user_album\` (\`user_id\`, \`album_id\`)
+  )
+`).catch((err) => console.error("Error creating reviews table:", err));
+
+promisePool
+  .query("ALTER TABLE `reviews` MODIFY COLUMN `rating` DECIMAL(2,1) NOT NULL")
+  .catch((err) => { if (err.code !== "ER_BAD_FIELD_ERROR") console.error("Error modifying rating column:", err); });
+
+promisePool
+  .query("ALTER TABLE `reviews` ADD COLUMN `display_name` VARCHAR(255) AFTER `user_id`")
+  .catch((err) => { if (err.code !== "ER_DUP_FIELDNAME") console.error("Error adding display_name column:", err); });
+
 promisePool
   .query("ALTER TABLE `liked_items` ADD COLUMN `image_url` VARCHAR(500)")
   .catch((err) => {
@@ -176,6 +200,84 @@ app.get("/profile", async (req, res) => {
   } catch (error) {
     console.error("Error fetching profile:", error);
     res.status(500).send("Error fetching user profile");
+  }
+});
+
+// Create or update a review
+app.post("/review", async (req, res) => {
+  const { userId, displayName, albumId, albumName, albumImage, rating, reviewText, isPrivate } = req.body;
+  if (!userId || !albumId || !rating) {
+    return res.status(400).json({ error: "userId, albumId, and rating are required" });
+  }
+  try {
+    await promisePool.query(
+      `INSERT INTO reviews (user_id, display_name, album_id, album_name, album_image, rating, review_text, is_private)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE display_name = ?, rating = ?, review_text = ?, is_private = ?, created_at = CURRENT_TIMESTAMP`,
+      [userId, displayName || null, albumId, albumName, albumImage, rating, reviewText || null, isPrivate ? 1 : 0,
+       displayName || null, rating, reviewText || null, isPrivate ? 1 : 0]
+    );
+    res.status(200).json({ message: "Review saved" });
+  } catch (err) {
+    console.error("Error saving review:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get public reviews for an album
+app.get("/reviews/album/:albumId", async (req, res) => {
+  try {
+    const [rows] = await promisePool.query(
+      "SELECT * FROM reviews WHERE album_id = ? AND is_private = FALSE ORDER BY created_at DESC",
+      [req.params.albumId]
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching album reviews:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get all reviews by a user (own profile — includes private)
+app.get("/reviews/user/:userId", async (req, res) => {
+  try {
+    const [rows] = await promisePool.query(
+      "SELECT * FROM reviews WHERE user_id = ? ORDER BY created_at DESC",
+      [req.params.userId]
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching user reviews:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Get public reviews by a user (public profile)
+app.get("/reviews/public/:userId", async (req, res) => {
+  try {
+    const [rows] = await promisePool.query(
+      "SELECT * FROM reviews WHERE user_id = ? AND is_private = FALSE ORDER BY created_at DESC",
+      [req.params.userId]
+    );
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error("Error fetching public user reviews:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Delete a review
+app.delete("/review/:id", async (req, res) => {
+  const { userId } = req.body;
+  try {
+    await promisePool.query(
+      "DELETE FROM reviews WHERE id = ? AND user_id = ?",
+      [req.params.id, userId]
+    );
+    res.status(200).json({ message: "Review deleted" });
+  } catch (err) {
+    console.error("Error deleting review:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
