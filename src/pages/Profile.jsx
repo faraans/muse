@@ -5,10 +5,9 @@ import Header from "./Header";
 import { Favorites } from "./Favorites/Favorites";
 import LikedGrid from "../components/LikedGrid";
 import UserReviews from "../components/UserReviews";
+import { BASE_URL } from "../constants";
 
-const BASE_URL = "http://localhost:8000";
-
-const Profile = ({ likedItems = [] }) => {
+const Profile = ({ likedItems = [], onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,7 +18,8 @@ const Profile = ({ likedItems = [] }) => {
   const [displayName, setDisplayName] = useState("");
   const [userId, setUserId] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [followers, setFollowers] = useState(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [bio, setBio] = useState("");
   const [editingBio, setEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
@@ -39,7 +39,6 @@ const Profile = ({ likedItems = [] }) => {
         const profile = response.data;
         setDisplayName(profile.display_name || "No Display Name");
         setUserId(profile.id);
-        setFollowers(profile.followers?.total ?? null);
         if (profile.images?.length > 0) {
           setAvatarUrl(profile.images[0].url);
         }
@@ -56,16 +55,17 @@ const Profile = ({ likedItems = [] }) => {
 
   useEffect(() => {
     if (!userId) return;
-    axios
-      .get(`${BASE_URL}/bio/${userId}`)
-      .then((res) => setBio(res.data.bio))
-      .catch((err) => console.error("Error fetching bio:", err));
+    Promise.all([
+      axios.get(`${BASE_URL}/bio/${userId}`),
+      axios.get(`${BASE_URL}/follow/counts/${userId}`),
+    ])
+      .then(([bioRes, countsRes]) => {
+        setBio(bioRes.data.bio);
+        setFollowerCount(countsRes.data.followers);
+        setFollowingCount(countsRes.data.following);
+      })
+      .catch((err) => console.error("Error fetching profile data:", err));
   }, [userId]);
-
-  const logout = () => {
-    localStorage.removeItem("accessToken");
-    window.location.href = "/";
-  };
 
   const startEditingBio = () => {
     setBioInput(bio);
@@ -101,7 +101,7 @@ const Profile = ({ likedItems = [] }) => {
       <Header
         userProfile={{ display_name: displayName }}
         accessToken={accessToken}
-        onLogout={logout}
+        onLogout={onLogout}
       />
 
       <div className="min-h-screen bg-neutral-900 text-white">
@@ -126,11 +126,11 @@ const Profile = ({ likedItems = [] }) => {
               <h1 className="text-3xl font-bold main-title text-white">
                 {displayName}
               </h1>
-              {followers !== null && (
-                <p className="text-neutral-400 text-sm">
-                  {followers.toLocaleString()} followers on Spotify
-                </p>
-              )}
+              <p className="text-neutral-400 text-sm">
+                <span>{followerCount.toLocaleString()} followers</span>
+                <span className="mx-2">·</span>
+                <span>{followingCount.toLocaleString()} following</span>
+              </p>
             </div>
           </div>
 
