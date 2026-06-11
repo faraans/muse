@@ -7,6 +7,7 @@ import Search from "./assets/Search";
 import ArtistCard from "./assets/ArtistCard";
 import AlbumCard from "./assets/AlbumCard";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import LoginPage from "./pages/LoginPage";
 
 const CLIENT_ID = "546d4bb1d257478393b6793e13136215";
@@ -16,13 +17,12 @@ const BASE_URL = "http://localhost:8000";
 function App() {
   const [token, setToken] = useState(localStorage.getItem("accessToken") || "");
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || "");
-  const [searchKey, setSearchKey] = useState(""); // Use searchKey here in App
-  const [artists, setArtists] = useState([]);
-  const [albums, setAlbums] = useState([]);
+  const [results, setResults] = useState([]);
   const [state, setState] = useState("");
   const [buttonText, setButtonText] = useState("muse");
   const [isOpen, setIsOpen] = useState(false);
-  const [likedItems, setLikedItems] = useState([]); // Keeps track of liked items
+  const [likedItems, setLikedItems] = useState([]);
+  const [userReviews, setUserReviews] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate(); // Use navigate hook
   const location = useLocation(); // Use location hook
@@ -68,6 +68,7 @@ function App() {
             if (profile) {
               setUserProfile(profile);
               fetchLikedItems(profile.id);
+              fetchUserReviews(profile.id);
             }
           })
           .catch(() => logout());
@@ -77,6 +78,7 @@ function App() {
           if (profile) {
             setUserProfile(profile);
             fetchLikedItems(profile.id);
+            fetchUserReviews(profile.id);
           }
         });
       }
@@ -141,6 +143,16 @@ function App() {
     }
   };
 
+  const fetchUserReviews = async (userId) => {
+    if (!userId) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/reviews/user/${userId}`);
+      setUserReviews(res.data);
+    } catch (error) {
+      console.error("Failed to fetch user reviews:", error);
+    }
+  };
+
   const logout = () => {
     setToken("");
     setRefreshToken("");
@@ -195,25 +207,29 @@ function App() {
     );
   };
 
-  const renderArtists = () =>
-    artists.map((artist) => (
-      <ArtistCard
-        key={artist.id}
-        artist={artist}
-        onLike={handleLike}
-        isLiked={isLiked(artist, "artist")}
-      />
-    ));
-
-  const renderAlbums = () =>
-    albums.map((album) => (
-      <AlbumCard
-        key={album.id}
-        album={album}
-        onLike={handleLike}
-        isLiked={isLiked(album, "album")}
-      />
-    ));
+  const renderResults = (items) =>
+    items.map((item) =>
+      item.type === "artist" ? (
+        <ArtistCard
+          key={item.id}
+          artist={item}
+          onLike={handleLike}
+          isLiked={isLiked(item, "artist")}
+          accessToken={token}
+        />
+      ) : (
+        <AlbumCard
+          key={item.id}
+          album={item}
+          onLike={handleLike}
+          isLiked={isLiked(item, "album")}
+          userId={userProfile?.id}
+          displayName={userProfile?.display_name}
+          userReview={userReviews.find((r) => r.album_id === item.id) || null}
+          onReviewSaved={() => fetchUserReviews(userProfile?.id)}
+        />
+      )
+    );
 
   const HomePage = () => {
     if (!token) return <LoginPage />;
@@ -229,11 +245,8 @@ function App() {
       <div className="main-page-container my-5">
         <div className="search-wrapper h-10">
           <Search
-            setArtists={setArtists}
-            setAlbums={setAlbums}
-            setSearchKey={setSearchKey}
+            setResults={setResults}
             token={token}
-            searchKey={searchKey}
           />
         </div>
         <button
@@ -247,37 +260,31 @@ function App() {
           <div>
             <button
               onClick={() => {
-                setButtonText("artists");
-                setState("artists");
+                const next = state === "artists" ? "" : "artists";
+                setButtonText(next || "muse");
+                setState(next);
               }}
-              className="hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
+              className={`hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl bg-neutral-800 border-neutral-900 ${state === "artists" ? "text-white" : "text-violet-700"}`}
             >
               artists
             </button>
             <div className="py-2"></div>
             <button
               onClick={() => {
-                setButtonText("albums");
-                setState("albums");
+                const next = state === "albums" ? "" : "albums";
+                setButtonText(next || "muse");
+                setState(next);
               }}
-              className="hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl text-violet-700 bg-neutral-800 border-neutral-900"
+              className={`hover:bg-neutral-700 transition main-title p-4 w-full flex items-center justify-center text-3xl bg-neutral-800 border-neutral-900 ${state === "albums" ? "text-white" : "text-violet-700"}`}
             >
               albums
             </button>
           </div>
         )}
         <p className="my-5"></p>
-        {state === "artists" || state === "albums" ? (
-          <>
-            {state === "artists" && renderArtists()}
-            {state === "albums" && renderAlbums()}
-          </>
-        ) : (
-          <>
-            {renderArtists()}
-            {renderAlbums()}
-          </>
-        )}
+        {state === "artists" || state === "albums"
+          ? renderResults(results.filter((r) => r.type === state.slice(0, -1)))
+          : renderResults(results)}
       </div>
     </>
     );
@@ -289,6 +296,10 @@ function App() {
       <Route
         path="/profile"
         element={<Profile accessToken={token} userProfile={userProfile} likedItems={likedItems} />}
+      />
+      <Route
+        path="/user/:userId"
+        element={<PublicProfile accessToken={token} userProfile={userProfile} onLogout={logout} />}
       />
     </Routes>
   );
