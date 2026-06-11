@@ -144,7 +144,7 @@ function App() {
     window.localStorage.removeItem("accessToken");
     window.localStorage.removeItem("refreshToken");
     window.localStorage.removeItem("tokenExpiry");
-    window.location.reload();
+    navigate("/");
   };
 
   const handleLike = async (item, type) => {
